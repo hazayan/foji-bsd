@@ -1,0 +1,57 @@
+#!/bin/sh
+
+# PROVIDE: manticore
+# REQUIRE: LOGIN
+# KEYWORD: shutdown
+
+#
+# Add the following lines to /etc/rc.conf to enable manticore:
+#
+# manticore_enable="YES"
+#
+# Other rc.conf variables:
+#
+# manticore_conffile="%%ETCDIR%%/manticore.conf"
+# manticore_pidfile="/var/run/manticore/searchd.pid"
+# manticore_user="%%USERS%%"
+# manticore_group="%%GROUPS%%"
+# manticore_dbdir="/var/db/manticore"
+# manticore_logdir="/var/log/manticore"
+#
+
+. /etc/rc.subr
+
+name=manticore
+rcvar=manticore_enable
+
+load_rc_config ${name}
+
+: ${manticore_enable:=NO}
+: ${manticore_conffile="%%ETCDIR%%/manticore.conf"}
+: ${manticore_pidfile="/var/run/manticore/searchd.pid"}
+: ${manticore_user="%%USERS%%"}
+: ${manticore_group="%%GROUPS%%"}
+: ${manticore_dbdir="/var/db/manticore"}
+: ${manticore_logdir="/var/log/manticore"}
+
+command=%%PREFIX%%/bin/searchd
+pidfile=${manticore_pidfile}
+required_files=${manticore_conffile}
+start_precmd=manticore_prestart
+
+manticore_prestart()
+{
+	/usr/bin/install -d -o ${manticore_user} -g ${manticore_group} -m 755 \
+		${pidfile%/*} ${manticore_dbdir} ${manticore_logdir}
+}
+
+case "${manticore_flags}" in
+*--config\ *)
+	echo "Warning: \$manticore_flags includes --config; use \$manticore_conffile instead."
+	;;
+*)
+	manticore_flags="--config ${manticore_conffile} ${manticore_flags}"
+	;;
+esac
+
+run_rc_command "$1"
