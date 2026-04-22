@@ -1,0 +1,5 @@
+Manticore Search is an open source search and analytics database focused on
+full-text search, real-time indexing, SQL access, and HTTP APIs.
+
+This port installs the Manticore daemon and companion indexing tools, along
+with a sample configuration and FreeBSD rc.d integration.

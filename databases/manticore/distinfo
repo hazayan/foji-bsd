@@ -1,0 +1,9 @@
+TIMESTAMP = 1775358528
+SHA256 (manticore/25.0.0.tar.gz) = 9ee49b6a876ece2058c848aa5a2e87d2a4db8ebbcc925836fc760962a84fb0fb
+SIZE (manticore/25.0.0.tar.gz) = 20757085
+SHA256 (manticore/c27-s19-k12.tar.gz) = e1c2ee29246326a1ebbaedda0b322e76f5e8edacde2caf6508b2121095df1908
+SIZE (manticore/c27-s19-k12.tar.gz) = 5765487
+SHA256 (manticore/v4.3.2.tar.gz) = 3be2e83b27cfbbf6692b215f9d4c1d1076b8e0adf7a2e0eabd2417601bbaaac3
+SIZE (manticore/v4.3.2.tar.gz) = 100734237
+SHA256 (manticore/v3.0.3.tar.gz) = e6127db8a7e4be394c75652b1e3486d88ec20bd2bbba5dea8c9017289aceecbe
+SIZE (manticore/v3.0.3.tar.gz) = 482263
