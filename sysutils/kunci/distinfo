@@ -1,6 +1,6 @@
-TIMESTAMP = 1776896597
-SHA256 (kunci-v0.9.0.tar.gz) = 04a6c8b726a0a10986d1f8d2d55d34d0eda9e3bf3a4f4f88b23d4652d283ef96
-SIZE (kunci-v0.9.0.tar.gz) = 125365
+TIMESTAMP = 1776905788
+SHA256 (kunci-v0.10.0.tar.gz) = 4f16531fffe344c70fe1b76c03e9cf36a184a3edc83a6fa2ba5f120e4f3b066d
+SIZE (kunci-v0.10.0.tar.gz) = 112452
 SHA256 (rust/crates/aead-0.5.2.crate) = d122413f284cf2d62fb1b7db97e02edb8cda96d769b16e443a4f6195e35662b0
 SIZE (rust/crates/aead-0.5.2.crate) = 15509
 SHA256 (rust/crates/aes-0.8.4.crate) = b169f7a6d4742236a0a00c541b845991d0ac43e546831af1249753ab4c3aa3a0
