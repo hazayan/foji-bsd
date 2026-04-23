@@ -1,5 +1,5 @@
 PORTNAME=	kunci
-DISTVERSION=	0.9.0
+DISTVERSION=	0.10.0
 CATEGORIES=	sysutils
 MASTER_SITES=	https://github.com/hazayan/${PORTNAME}/releases/download/v${DISTVERSION}/
 DISTFILES=	${PORTNAME}-v${DISTVERSION}.tar.gz
@@ -9,7 +9,7 @@ MAINTAINER=	ports@FreeBSD.org
 COMMENT=	Clevis and Tang implementation for network-bound disk encryption
 WWW=		https://github.com/hazayan/kunci
 
-LICENSE=	GPLv3
+LICENSE=	BSD2CLAUSE
 LICENSE_FILE=	${WRKSRC}/LICENSE
 
 USES=		cargo
