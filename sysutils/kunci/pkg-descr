@@ -1,0 +1,12 @@
+Kunci is a Rust implementation of Clevis and Tang for network-bound disk
+encryption workflows.
+
+This port packages the client and server binaries together with the FreeBSD
+boot-time ZFS unlock helper script.
+
+Installed components:
+- kunci: client command-line interface
+- kunci-server: Tang server daemon
+- kunci_zfs: rc.d helper for boot-time ZFS unlock
+
+WWW: https://github.com/hazayan/kunci

@@ -1,0 +1,11 @@
+zhamel-zfskey-kmod provides the FreeBSD kernel module used by zhamel to consume
+preloaded ZFS wrapping keys during early boot.
+
+The package installs:
+
+  /boot/modules/zhamel_zfskey.ko
+
+The module reads the zhamel preload payload, imports the root pool when needed,
+and loads the native OpenZFS wrapping key into the target encryption root.
+
+WWW: https://github.com/hazayan/zhamel-zfskey-kmod

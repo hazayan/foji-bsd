@@ -1,0 +1,12 @@
+Zhamel is a Rust implementation of the FreeBSD amd64 UEFI loader with feature
+parity against loader.efi and additional ZFS unlock support.
+
+The package installs the EFI binary under:
+
+  /usr/local/share/efi/FreeBSD/zhamel.efi
+
+Deploy it manually to the EFI system partition, typically as:
+
+  /boot/efi/EFI/FreeBSD/loader.efi
+
+WWW: https://github.com/hazayan/zhamel

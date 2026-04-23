@@ -1,0 +1,17 @@
+[
+{ type: install
+  message: <<EOM
+Zhamel installs its EFI binary at:
+
+  ${PREFIX}/share/efi/FreeBSD/zhamel.efi
+
+Typical deployment on FreeBSD:
+
+  install -m 0644 ${PREFIX}/share/efi/FreeBSD/zhamel.efi \
+      /boot/efi/EFI/FreeBSD/loader.efi
+
+For encrypted-root boot you will also need the matching zhamel_zfskey kernel
+module package once it is added to this ports tree.
+EOM
+}
+]

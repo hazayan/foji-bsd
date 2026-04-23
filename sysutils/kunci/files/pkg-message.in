@@ -1,0 +1,21 @@
+[
+{ type: install
+  message: <<EOM
+Kunci installs:
+
+  ${PREFIX}/bin/kunci
+  ${PREFIX}/bin/kunci-server
+  ${PREFIX}/etc/rc.d/kunci_zfs
+  ${ETCDIR}/kunci.conf.sample
+
+To enable boot-time ZFS unlock:
+
+  sysrc kunci_zfs_enable=YES
+  sysrc kunci_zfs_datasets="pool/root"
+
+Optional logging flags:
+
+  sysrc kunci_zfs_opts="--log-level debug --log-modules tang,zfs"
+EOM
+}
+]
