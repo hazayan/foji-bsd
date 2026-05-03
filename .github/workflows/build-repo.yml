@@ -25,6 +25,7 @@ env:
   JAIL_NAME: freebsd${{ inputs.freebsd_major }}-aarch64
   PORTS_TREE: foji
   SET_NAME: default
+  PACKAGE_FETCH_BRANCH: latest
   RELEASE_TAG: "repo-FreeBSD:${{ inputs.freebsd_major }}:aarch64"
   REPO_OUT: "repo-output/FreeBSD:${{ inputs.freebsd_major }}:aarch64"
 
@@ -50,6 +51,7 @@ jobs:
           JAIL_NAME: ${{ env.JAIL_NAME }}
           PORTS_TREE: ${{ env.PORTS_TREE }}
           SET_NAME: ${{ env.SET_NAME }}
+          PACKAGE_FETCH_BRANCH: ${{ env.PACKAGE_FETCH_BRANCH }}
           REPO_OUT: ${{ env.REPO_OUT }}
         with:
           release: "15.0"
@@ -58,7 +60,7 @@ jobs:
           copyback: true
           mem: 8192
           cpu: 4
-          envs: "PKG_REPO_SIGNING_KEY_B64 FREEBSD_RELEASE FREEBSD_MAJOR PKG_ABI POUDRIERE_ARCH TARGET_ARCH JAIL_NAME PORTS_TREE SET_NAME REPO_OUT"
+          envs: "PKG_REPO_SIGNING_KEY_B64 FREEBSD_RELEASE FREEBSD_MAJOR PKG_ABI POUDRIERE_ARCH TARGET_ARCH JAIL_NAME PORTS_TREE SET_NAME PACKAGE_FETCH_BRANCH REPO_OUT"
           run: |
             chmod +x .github/scripts/build-poudriere-repo.sh
             .github/scripts/build-poudriere-repo.sh
@@ -72,7 +74,7 @@ jobs:
 
           ## Usage
 
-          Install \`foji.pub\` from this release on the target system, then add:
+          Install the foji public key on the target system through sysbsd, then add:
 
           \`\`\`conf
           foji: {

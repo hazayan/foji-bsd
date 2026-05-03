@@ -9,6 +9,7 @@ TARGET_ARCH="${TARGET_ARCH:-aarch64}"
 JAIL_NAME="${JAIL_NAME:-freebsd${FREEBSD_MAJOR}-aarch64}"
 PORTS_TREE="${PORTS_TREE:-foji}"
 SET_NAME="${SET_NAME:-default}"
+PACKAGE_FETCH_BRANCH="${PACKAGE_FETCH_BRANCH:-latest}"
 REPO_OUT="${REPO_OUT:-repo-output/${PKG_ABI}}"
 POUDRIERE_BASE="${POUDRIERE_BASE:-/usr/local/poudriere}"
 PORTS_ROOT="${POUDRIERE_BASE}/ports/${PORTS_TREE}"
@@ -180,6 +181,7 @@ build_repo() {
 		-j "${JAIL_NAME}" \
 		-p "${PORTS_TREE}" \
 		-z "${SET_NAME}" \
+		-b "${PACKAGE_FETCH_BRANCH}" \
 		-f "${PKGLIST}"
 }
 
