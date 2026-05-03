@@ -10,6 +10,7 @@ JAIL_NAME="${JAIL_NAME:-freebsd${FREEBSD_MAJOR}-aarch64}"
 PORTS_TREE="${PORTS_TREE:-foji}"
 SET_NAME="${SET_NAME:-default}"
 PACKAGE_FETCH_BRANCH="${PACKAGE_FETCH_BRANCH:-latest}"
+POUDRIERE_JAIL_FLAGS="${POUDRIERE_JAIL_FLAGS:--X}"
 REPO_OUT="${REPO_OUT:-repo-output/${PKG_ABI}}"
 POUDRIERE_BASE="${POUDRIERE_BASE:-/usr/local/poudriere}"
 PORTS_ROOT="${POUDRIERE_BASE}/ports/${PORTS_TREE}"
@@ -97,9 +98,34 @@ install_packages() {
 		git \
 		pkg \
 		poudriere \
-		qemu-user-static \
 		rsync \
 		sudo
+
+	if is_cross_build_host; then
+		pkg install -y qemu-user-static
+	fi
+}
+
+host_arch() {
+	uname -p
+}
+
+normalized_arch() {
+	case "$1" in
+		arm64)
+			echo "aarch64"
+			;;
+		amd64)
+			echo "amd64"
+			;;
+		*)
+			echo "$1"
+			;;
+	esac
+}
+
+is_cross_build_host() {
+	[ "$(normalized_arch "$(host_arch)")" != "$(normalized_arch "${TARGET_ARCH}")" ]
 }
 
 configure_qemu() {
@@ -137,10 +163,14 @@ EOF
 create_jail_and_ports() {
 	log "Creating poudriere jail ${JAIL_NAME} for ${FREEBSD_RELEASE} ${POUDRIERE_ARCH}"
 	if ! poudriere jail -l -n -q | grep -qx "${JAIL_NAME}"; then
+		# -X disables native xtools. The CI path uses an aarch64 VM for aarch64
+		# packages, so we do not need poudriere to build a cross toolchain.
+		# shellcheck disable=SC2086
 		poudriere jail -c \
 			-j "${JAIL_NAME}" \
 			-v "${FREEBSD_RELEASE}" \
 			-a "${POUDRIERE_ARCH}" \
+			${POUDRIERE_JAIL_FLAGS} \
 			-m http
 	fi
 
@@ -212,7 +242,11 @@ publishable_flat_repo() {
 main() {
 	require_secret
 	install_packages
-	configure_qemu
+	if is_cross_build_host; then
+		configure_qemu
+	else
+		log "Skipping qemu-user-static setup on native $(host_arch) VM"
+	fi
 	configure_poudriere
 	create_jail_and_ports
 	overlay_ports
