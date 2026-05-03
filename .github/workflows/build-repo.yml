@@ -1,0 +1,127 @@
+name: Build FreeBSD Package Repository
+
+on:
+  workflow_dispatch:
+    inputs:
+      freebsd_release:
+        description: "FreeBSD release used for the poudriere jail"
+        required: true
+        default: "15.0-RELEASE"
+      freebsd_major:
+        description: "FreeBSD major version used in the pkg ABI and release tag"
+        required: true
+        default: "15"
+
+concurrency:
+  group: foji-bsd-repo-FreeBSD-${{ inputs.freebsd_major }}-aarch64
+  cancel-in-progress: false
+
+env:
+  FREEBSD_RELEASE: ${{ inputs.freebsd_release }}
+  FREEBSD_MAJOR: ${{ inputs.freebsd_major }}
+  PKG_ABI: "FreeBSD:${{ inputs.freebsd_major }}:aarch64"
+  POUDRIERE_ARCH: arm64.aarch64
+  TARGET_ARCH: aarch64
+  JAIL_NAME: freebsd${{ inputs.freebsd_major }}-aarch64
+  PORTS_TREE: foji
+  SET_NAME: default
+  RELEASE_TAG: "repo-FreeBSD:${{ inputs.freebsd_major }}:aarch64"
+  REPO_OUT: "repo-output/FreeBSD:${{ inputs.freebsd_major }}:aarch64"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout ports tree
+        uses: actions/checkout@v6
+
+      - name: Build pkg repository in FreeBSD
+        uses: vmactions/freebsd-vm@v1
+        env:
+          PKG_REPO_SIGNING_KEY_B64: ${{ secrets.PKG_REPO_SIGNING_KEY_B64 }}
+          FREEBSD_RELEASE: ${{ env.FREEBSD_RELEASE }}
+          FREEBSD_MAJOR: ${{ env.FREEBSD_MAJOR }}
+          PKG_ABI: ${{ env.PKG_ABI }}
+          POUDRIERE_ARCH: ${{ env.POUDRIERE_ARCH }}
+          TARGET_ARCH: ${{ env.TARGET_ARCH }}
+          JAIL_NAME: ${{ env.JAIL_NAME }}
+          PORTS_TREE: ${{ env.PORTS_TREE }}
+          SET_NAME: ${{ env.SET_NAME }}
+          REPO_OUT: ${{ env.REPO_OUT }}
+        with:
+          release: "15.0"
+          usesh: true
+          sync: rsync
+          copyback: true
+          mem: 8192
+          cpu: 4
+          envs: "PKG_REPO_SIGNING_KEY_B64 FREEBSD_RELEASE FREEBSD_MAJOR PKG_ABI POUDRIERE_ARCH TARGET_ARCH JAIL_NAME PORTS_TREE SET_NAME REPO_OUT"
+          run: |
+            chmod +x .github/scripts/build-poudriere-repo.sh
+            .github/scripts/build-poudriere-repo.sh
+
+      - name: Create release notes
+        run: |
+          cat > release-notes.md <<EOF
+          Last updated: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
+
+          FreeBSD package repository for \`${PKG_ABI}\`.
+
+          ## Usage
+
+          Install \`foji.pub\` from this release on the target system, then add:
+
+          \`\`\`conf
+          foji: {
+            url: "https://github.com/${GITHUB_REPOSITORY}/releases/download/${RELEASE_TAG}",
+            mirror_type: "none",
+            signature_type: "pubkey",
+            pubkey: "/usr/local/etc/pkg/keys/foji.pub",
+            enabled: yes
+          }
+          \`\`\`
+          EOF
+
+      - name: Publish package repository release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          if [ ! -d "${REPO_OUT}" ]; then
+            echo "Repository output directory does not exist: ${REPO_OUT}" >&2
+            exit 1
+          fi
+
+          find "${REPO_OUT}" -maxdepth 1 -type f -print | sort
+
+          if gh release view "${RELEASE_TAG}" >/dev/null 2>&1; then
+            gh release edit "${RELEASE_TAG}" \
+              --title "Package Repository ${PKG_ABI}" \
+              --notes-file release-notes.md
+          else
+            gh release create "${RELEASE_TAG}" \
+              --title "Package Repository ${PKG_ABI}" \
+              --notes-file release-notes.md
+          fi
+
+          mapfile -t uploads < <(find "${REPO_OUT}" -maxdepth 1 -type f -print | sort)
+          if [ "${#uploads[@]}" -eq 0 ]; then
+            echo "No repository files to upload" >&2
+            exit 1
+          fi
+
+          gh release upload "${RELEASE_TAG}" "${uploads[@]}" --clobber
+
+          printf '%s\n' "${uploads[@]##*/}" > /tmp/current-release-assets.txt
+
+          gh release view "${RELEASE_TAG}" --json assets -q '.assets[].name' |
+            while IFS= read -r asset; do
+              if ! grep -qxF "$asset" /tmp/current-release-assets.txt; then
+                echo "Deleting obsolete release asset: $asset"
+                gh release delete-asset "${RELEASE_TAG}" "$asset" --yes
+              fi
+            done
