@@ -9,10 +9,19 @@ TARGET_ARCH="${TARGET_ARCH:-aarch64}"
 JAIL_NAME="${JAIL_NAME:-freebsd${FREEBSD_MAJOR}-aarch64}"
 PORTS_TREE="${PORTS_TREE:-foji}"
 SET_NAME="${SET_NAME:-default}"
+REQUESTED_PORTS="${REQUESTED_PORTS:-auto}"
 PACKAGE_FETCH_BRANCH="${PACKAGE_FETCH_BRANCH:-latest}"
 POUDRIERE_JAIL_FLAGS="${POUDRIERE_JAIL_FLAGS:--X}"
+HEARTBEAT_INTERVAL="${HEARTBEAT_INTERVAL:-60}"
 REPO_OUT="${REPO_OUT:-repo-output/${PKG_ABI}}"
 POUDRIERE_BASE="${POUDRIERE_BASE:-/usr/local/poudriere}"
+case "${POUDRIERE_BASE}" in
+	/*)
+		;;
+	*)
+		POUDRIERE_BASE="$(pwd)/${POUDRIERE_BASE}"
+		;;
+esac
 PORTS_ROOT="${POUDRIERE_BASE}/ports/${PORTS_TREE}"
 PACKAGES_ROOT="${POUDRIERE_BASE}/data/packages/${JAIL_NAME}-${PORTS_TREE}-${SET_NAME}"
 PKGLIST="/usr/local/etc/poudriere.d/${PKG_ABI}.pkglist"
@@ -24,6 +33,28 @@ log() {
 	printf '\n==> %s\n' "$*"
 }
 
+heartbeat() {
+	while :; do
+		sleep "${HEARTBEAT_INTERVAL}"
+		log "Heartbeat: build still running at $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+		ps -ax -o pid,stat,etime,command |
+			awk '/[p]oudriere|[p]kg |[m]ake|[q]emu|[c]c |[c][+][+] |[r]ustc|[c]argo/ {print}'
+	done
+}
+
+start_heartbeat() {
+	heartbeat &
+	HEARTBEAT_PID="$!"
+	trap stop_heartbeat EXIT INT TERM
+}
+
+stop_heartbeat() {
+	if [ -n "${HEARTBEAT_PID:-}" ]; then
+		kill "${HEARTBEAT_PID}" 2>/dev/null || true
+		wait "${HEARTBEAT_PID}" 2>/dev/null || true
+	fi
+}
+
 require_secret() {
 	if [ -z "${PKG_REPO_SIGNING_KEY_B64:-}" ]; then
 		echo "PKG_REPO_SIGNING_KEY_B64 secret is required. It must contain a base64-encoded OpenSSL ECDSA DER private key." >&2
@@ -32,13 +63,7 @@ require_secret() {
 }
 
 discover_ports() {
-	find . \
-		-mindepth 2 \
-		-maxdepth 2 \
-		-name Makefile \
-		-not -path './.git/*' \
-		-not -path './.github/*' \
-		-not -path './Mk/*' \
+	find ./*/*/Makefile \
 		-print |
 		sed 's#^\./##; s#/Makefile$##' |
 		sort
@@ -82,7 +107,17 @@ port_supports_target_arch() {
 
 write_pkglist() {
 	: > "${PKGLIST}"
-	for origin in $(discover_ports); do
+	if [ "${REQUESTED_PORTS}" = "auto" ]; then
+		ports="$(discover_ports)"
+	else
+		ports="${REQUESTED_PORTS}"
+	fi
+
+	for origin in ${ports}; do
+		if [ ! -d "${PORTS_ROOT}/${origin}" ]; then
+			echo "Requested port origin does not exist in poudriere ports tree: ${origin}" >&2
+			exit 1
+		fi
 		if port_supports_target_arch "${origin}"; then
 			echo "${origin}" >> "${PKGLIST}"
 		fi
@@ -240,6 +275,7 @@ publishable_flat_repo() {
 }
 
 main() {
+	start_heartbeat
 	require_secret
 	install_packages
 	if is_cross_build_host; then

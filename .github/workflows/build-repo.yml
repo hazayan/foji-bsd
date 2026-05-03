@@ -11,6 +11,10 @@ on:
         description: "FreeBSD major version used in the pkg ABI and release tag"
         required: true
         default: "15"
+      ports:
+        description: "Space-separated port origins to build, or auto for all supported custom ports"
+        required: true
+        default: "auto"
 
 concurrency:
   group: foji-bsd-repo-FreeBSD-${{ inputs.freebsd_major }}-aarch64
@@ -25,8 +29,10 @@ env:
   JAIL_NAME: freebsd${{ inputs.freebsd_major }}-aarch64
   PORTS_TREE: foji
   SET_NAME: default
+  REQUESTED_PORTS: ${{ inputs.ports }}
   PACKAGE_FETCH_BRANCH: latest
   POUDRIERE_JAIL_FLAGS: "-X"
+  POUDRIERE_BASE: ".poudriere"
   RELEASE_TAG: "repo-FreeBSD:${{ inputs.freebsd_major }}:aarch64"
   REPO_OUT: "repo-output/FreeBSD:${{ inputs.freebsd_major }}:aarch64"
 
@@ -40,6 +46,15 @@ jobs:
       - name: Checkout ports tree
         uses: actions/checkout@v6
 
+      - name: Restore poudriere cache
+        uses: actions/cache@v4
+        with:
+          path: .poudriere
+          key: poudriere-${{ runner.os }}-${{ env.PKG_ABI }}-${{ env.FREEBSD_RELEASE }}-${{ hashFiles('**/Makefile', '**/distinfo', '**/pkg-*', 'UIDs', 'GIDs') }}
+          restore-keys: |
+            poudriere-${{ runner.os }}-${{ env.PKG_ABI }}-${{ env.FREEBSD_RELEASE }}-
+            poudriere-${{ runner.os }}-${{ env.PKG_ABI }}-
+
       - name: Build pkg repository in FreeBSD
         uses: vmactions/freebsd-vm@v1
         env:
@@ -52,8 +67,10 @@ jobs:
           JAIL_NAME: ${{ env.JAIL_NAME }}
           PORTS_TREE: ${{ env.PORTS_TREE }}
           SET_NAME: ${{ env.SET_NAME }}
+          REQUESTED_PORTS: ${{ env.REQUESTED_PORTS }}
           PACKAGE_FETCH_BRANCH: ${{ env.PACKAGE_FETCH_BRANCH }}
           POUDRIERE_JAIL_FLAGS: ${{ env.POUDRIERE_JAIL_FLAGS }}
+          POUDRIERE_BASE: ${{ env.POUDRIERE_BASE }}
           REPO_OUT: ${{ env.REPO_OUT }}
         with:
           release: "15.0"
@@ -63,7 +80,7 @@ jobs:
           copyback: true
           mem: 8192
           cpu: 4
-          envs: "PKG_REPO_SIGNING_KEY_B64 FREEBSD_RELEASE FREEBSD_MAJOR PKG_ABI POUDRIERE_ARCH TARGET_ARCH JAIL_NAME PORTS_TREE SET_NAME PACKAGE_FETCH_BRANCH POUDRIERE_JAIL_FLAGS REPO_OUT"
+          envs: "PKG_REPO_SIGNING_KEY_B64 FREEBSD_RELEASE FREEBSD_MAJOR PKG_ABI POUDRIERE_ARCH TARGET_ARCH JAIL_NAME PORTS_TREE SET_NAME REQUESTED_PORTS PACKAGE_FETCH_BRANCH POUDRIERE_JAIL_FLAGS POUDRIERE_BASE REPO_OUT"
           run: |
             chmod +x .github/scripts/build-poudriere-repo.sh
             .github/scripts/build-poudriere-repo.sh
