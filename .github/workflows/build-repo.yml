@@ -32,7 +32,8 @@ env:
   REQUESTED_PORTS: ${{ inputs.ports }}
   PACKAGE_FETCH_BRANCH: latest
   POUDRIERE_JAIL_FLAGS: "-X"
-  POUDRIERE_BASE: ".poudriere"
+  POUDRIERE_BASE: "poudriere-cache"
+  POUDRIERE_CACHE_EPOCH: "1"
   RELEASE_TAG: "repo-FreeBSD:${{ inputs.freebsd_major }}:aarch64"
   REPO_OUT: "repo-output/FreeBSD:${{ inputs.freebsd_major }}:aarch64"
 
@@ -50,12 +51,12 @@ jobs:
         id: poudriere-cache-restore
         uses: actions/cache/restore@v5
         with:
-          path: .poudriere
-          key: poudriere-${{ runner.os }}-${{ env.PKG_ABI }}-${{ env.FREEBSD_RELEASE }}-${{ hashFiles('**/Makefile', '**/distinfo', '**/pkg-*', 'UIDs', 'GIDs') }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: poudriere-cache
+          key: poudriere-v${{ env.POUDRIERE_CACHE_EPOCH }}-${{ runner.os }}-${{ env.PKG_ABI }}-${{ env.FREEBSD_RELEASE }}-${{ hashFiles('**/Makefile', '**/distinfo', '**/pkg-*', 'UIDs', 'GIDs') }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
-            poudriere-${{ runner.os }}-${{ env.PKG_ABI }}-${{ env.FREEBSD_RELEASE }}-${{ hashFiles('**/Makefile', '**/distinfo', '**/pkg-*', 'UIDs', 'GIDs') }}-
-            poudriere-${{ runner.os }}-${{ env.PKG_ABI }}-${{ env.FREEBSD_RELEASE }}-
-            poudriere-${{ runner.os }}-${{ env.PKG_ABI }}-
+            poudriere-v${{ env.POUDRIERE_CACHE_EPOCH }}-${{ runner.os }}-${{ env.PKG_ABI }}-${{ env.FREEBSD_RELEASE }}-${{ hashFiles('**/Makefile', '**/distinfo', '**/pkg-*', 'UIDs', 'GIDs') }}-
+            poudriere-v${{ env.POUDRIERE_CACHE_EPOCH }}-${{ runner.os }}-${{ env.PKG_ABI }}-${{ env.FREEBSD_RELEASE }}-
+            poudriere-v${{ env.POUDRIERE_CACHE_EPOCH }}-${{ runner.os }}-${{ env.PKG_ABI }}-
 
       - name: Build pkg repository in FreeBSD
         uses: vmactions/freebsd-vm@v1
@@ -91,7 +92,7 @@ jobs:
         if: always()
         uses: actions/cache/save@v5
         with:
-          path: .poudriere
+          path: poudriere-cache
           key: ${{ steps.poudriere-cache-restore.outputs.cache-primary-key }}
 
       - name: Create release notes

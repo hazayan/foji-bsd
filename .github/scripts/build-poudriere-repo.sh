@@ -218,11 +218,9 @@ create_jail_and_ports() {
 
 overlay_ports() {
 	log "Overlaying foji-bsd custom ports into ${PORTS_ROOT}"
-	for category in databases sysutils; do
-		if [ -d "${category}" ]; then
-			mkdir -p "${PORTS_ROOT}/${category}"
-			rsync -a --delete "${category}/" "${PORTS_ROOT}/${category}/"
-		fi
+	for origin in $(discover_ports); do
+		mkdir -p "${PORTS_ROOT}/${origin}"
+		rsync -a --delete "${origin}/" "${PORTS_ROOT}/${origin}/"
 	done
 
 	for metadata in UIDs GIDs; do
