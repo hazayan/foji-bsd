@@ -47,14 +47,15 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Restore poudriere cache
-        uses: actions/cache@v4
+        id: poudriere-cache-restore
+        uses: actions/cache/restore@v5
         with:
           path: .poudriere
-          key: poudriere-${{ runner.os }}-${{ env.PKG_ABI }}-${{ env.FREEBSD_RELEASE }}-${{ hashFiles('**/Makefile', '**/distinfo', '**/pkg-*', 'UIDs', 'GIDs') }}
+          key: poudriere-${{ runner.os }}-${{ env.PKG_ABI }}-${{ env.FREEBSD_RELEASE }}-${{ hashFiles('**/Makefile', '**/distinfo', '**/pkg-*', 'UIDs', 'GIDs') }}-${{ github.run_id }}-${{ github.run_attempt }}
           restore-keys: |
+            poudriere-${{ runner.os }}-${{ env.PKG_ABI }}-${{ env.FREEBSD_RELEASE }}-${{ hashFiles('**/Makefile', '**/distinfo', '**/pkg-*', 'UIDs', 'GIDs') }}-
             poudriere-${{ runner.os }}-${{ env.PKG_ABI }}-${{ env.FREEBSD_RELEASE }}-
             poudriere-${{ runner.os }}-${{ env.PKG_ABI }}-
-          save-always: true
 
       - name: Build pkg repository in FreeBSD
         uses: vmactions/freebsd-vm@v1
@@ -85,6 +86,13 @@ jobs:
           run: |
             chmod +x .github/scripts/build-poudriere-repo.sh
             .github/scripts/build-poudriere-repo.sh
+
+      - name: Save poudriere cache
+        if: always()
+        uses: actions/cache/save@v5
+        with:
+          path: .poudriere
+          key: ${{ steps.poudriere-cache-restore.outputs.cache-primary-key }}
 
       - name: Create release notes
         run: |
