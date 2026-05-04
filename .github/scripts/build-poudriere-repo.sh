@@ -26,8 +26,8 @@ PORTS_ROOT="${POUDRIERE_BASE}/ports/${PORTS_TREE}"
 PACKAGES_ROOT="${POUDRIERE_BASE}/data/packages/${JAIL_NAME}-${PORTS_TREE}-${SET_NAME}"
 DISTFILES_CACHE="${DISTFILES_CACHE:-${POUDRIERE_BASE}/distfiles}"
 PKGLIST="/usr/local/etc/poudriere.d/${PKG_ABI}.pkglist"
-SIGNING_KEY="/usr/local/etc/poudriere.d/keys/pkg.key"
-SIGNING_PUB="/usr/local/etc/poudriere.d/keys/pkg.pub"
+SIGNING_KEY="${POUDRIERE_BASE}/keys/pkg.key"
+SIGNING_PUB="${POUDRIERE_BASE}/keys/pkg.pub"
 SIGNING_TYPE="${SIGNING_TYPE:-ecdsa}"
 
 log() {
@@ -173,7 +173,7 @@ configure_qemu() {
 
 configure_poudriere() {
 	log "Configuring poudriere"
-	mkdir -p "${POUDRIERE_BASE}" "${DISTFILES_CACHE}" /usr/local/etc/poudriere.d/keys
+	mkdir -p "${POUDRIERE_BASE}" "${DISTFILES_CACHE}" "${POUDRIERE_BASE}/keys" /usr/local/etc/poudriere.d
 
 	cat > /usr/local/etc/poudriere.conf <<EOF
 NO_ZFS=yes
