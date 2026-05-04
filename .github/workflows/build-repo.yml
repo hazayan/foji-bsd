@@ -54,6 +54,7 @@ jobs:
           restore-keys: |
             poudriere-${{ runner.os }}-${{ env.PKG_ABI }}-${{ env.FREEBSD_RELEASE }}-
             poudriere-${{ runner.os }}-${{ env.PKG_ABI }}-
+          save-always: true
 
       - name: Build pkg repository in FreeBSD
         uses: vmactions/freebsd-vm@v1
