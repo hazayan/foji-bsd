@@ -1,2 +1,9 @@
 .jj
-development.log
+devlog.md
+release-notes.md
+repo-output/
+
+# Beads / Dolt files (added by bd init)
+.dolt/
+*.db
+.beads-credential-key

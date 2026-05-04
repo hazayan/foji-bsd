@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "embedded",
+  "dolt_database": "foji_bsd",
+  "project_id": "3677be40-5a74-4cbe-9d42-13e44b50b0e6"
+}
