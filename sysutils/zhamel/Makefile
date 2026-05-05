@@ -5,7 +5,7 @@ USE_GITHUB=	yes
 GH_ACCOUNT=	hazayan
 GH_TAGNAME=	v${DISTVERSION}
 
-MAINTAINER=	ports@FreeBSD.org
+MAINTAINER=	yassine@hazayan.dev
 COMMENT=	Rust UEFI loader for FreeBSD with ZFS unlock extensions
 WWW=		https://github.com/hazayan/zhamel
 

@@ -5,7 +5,7 @@ MASTER_SITES=	https://github.com/hazayan/${PORTNAME}/releases/download/v${DISTVE
 DISTFILES=	${PORTNAME}-v${DISTVERSION}.tar.gz
 WRKSRC=		${WRKDIR}/${PORTNAME}-v${DISTVERSION}
 
-MAINTAINER=	ports@FreeBSD.org
+MAINTAINER=	yassine@hazayan.dev
 COMMENT=	Clevis and Tang implementation for network-bound disk encryption
 WWW=		https://github.com/hazayan/kunci
 

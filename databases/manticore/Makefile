@@ -14,7 +14,9 @@ WRKSRC=		${WRKDIR}/manticoresearch-${DISTVERSION}
 UID_FILES=	${.CURDIR:H:H}/UIDs ${PORTSDIR}/UIDs
 GID_FILES=	${.CURDIR:H:H}/GIDs ${PORTSDIR}/GIDs
 
-MAINTAINER=	ports@FreeBSD.org
+ONLY_FOR_ARCHS= amd64
+
+MAINTAINER=	yassine@hazayan.dev
 COMMENT=	Open source search and analytics database
 WWW=		https://manticoresearch.com/
 

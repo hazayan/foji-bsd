@@ -3,7 +3,9 @@ DISTVERSION=	0.10.0
 CATEGORIES=	sysutils
 PKGNAMESUFFIX=	-kmod
 
-MAINTAINER=	ports@FreeBSD.org
+ONLY_FOR_ARCHS= amd64
+
+MAINTAINER=	yassine@hazayan.dev
 COMMENT=	Kernel module that loads zhamel-preloaded ZFS wrapping keys
 WWW=		https://github.com/hazayan/zhamel-zfskey-kmod
 
