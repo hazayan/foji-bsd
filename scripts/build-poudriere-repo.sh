@@ -114,7 +114,8 @@ write_pkglist() {
 		ports="${REQUESTED_PORTS}"
 	fi
 
-	for origin in ${ports}; do
+	for requested in ${ports}; do
+		origin="$(resolve_port_origin "${requested}")"
 		if [ ! -d "${PORTS_ROOT}/${origin}" ]; then
 			echo "Requested port origin does not exist in poudriere ports tree: ${origin}" >&2
 			exit 1
@@ -123,6 +124,33 @@ write_pkglist() {
 			echo "${origin}" >> "${PKGLIST}"
 		fi
 	done
+}
+
+resolve_port_origin() {
+	requested="$1"
+	case "${requested}" in
+		*/*)
+			echo "${requested}"
+			return 0
+			;;
+	esac
+
+	matches="$(discover_ports | awk -F/ -v name="${requested}" '$2 == name { print }')"
+	count="$(printf '%s\n' "${matches}" | sed '/^$/d' | wc -l | tr -d ' ')"
+	case "${count}" in
+		0)
+			echo "Requested port name does not match a custom origin: ${requested}" >&2
+			exit 1
+			;;
+		1)
+			printf '%s\n' "${matches}"
+			;;
+		*)
+			echo "Requested port name is ambiguous: ${requested}" >&2
+			printf '%s\n' "${matches}" >&2
+			exit 1
+			;;
+	esac
 }
 
 install_packages() {
