@@ -134,6 +134,21 @@ REPO_PACKAGE_ORIGINS="sysutils/kunci sysutils/zhamel sysutils/zhamel-zfskey-kmod
 `zhamel` and `zhamel-zfskey-kmod` are amd64-only ports, so the profile refuses
 to run on non-amd64 builders.
 
+For the complete amd64 repository, including sysbsd boot packages and Manticore
+Search, build the full amd64 profile:
+
+```sh
+FOJI_BUILDER_ARCH=amd64
+FOJI_BUILD_PROFILE=foji-amd64
+```
+
+That profile expands to:
+
+```sh
+REQUESTED_PORTS="kunci zhamel zhamel-zfskey-kmod manticore"
+REPO_PACKAGE_ORIGINS="sysutils/kunci sysutils/zhamel sysutils/zhamel-zfskey-kmod databases/manticore"
+```
+
 For amd64 server nodes that need Manticore Search, build the manticore profile:
 
 ```sh
@@ -150,6 +165,16 @@ REPO_PACKAGE_ORIGINS="databases/manticore"
 
 `databases/manticore` is amd64-only and intentionally excluded from the
 aarch64 build path.
+
+On altair-class builder hardware, override the conservative amd64 VM size:
+
+```sh
+FOJI_VM_CPUS=12
+FOJI_VM_MEM=24576
+```
+
+The default amd64 VM size is still 4 vCPUs and 8192 MiB so the script remains
+usable on smaller workstations.
 
 `sysutils/zhamel` intentionally uses the official Rust standalone
 `rust-<version>-x86_64-unknown-freebsd` toolchain plus the matching
