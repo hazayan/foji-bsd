@@ -1,0 +1,13 @@
+This is a custom overlay of the Nomad pot task driver with one change:
+
+- Adds `-S dual` to `pot prepare` arguments, enabling IPv6 dual-stack
+  networking in pot jails. This is required for actix-web applications
+  (like AppFlowy Cloud) that create PF_INET6 sockets for HTTP servers.
+
+Without this patch, FreeBSD jails created by the pot driver have IPv6
+disabled (`ip6=disable`), which causes `EPROTONOSUPPORT` (Protocol not
+supported) errors when actix-web attempts to bind to `[::]:PORT`.
+
+The patch is a one-line addition to driver/prepare.go:
+
+    argv = append(argv, "prepare", ..., "-S", "dual")

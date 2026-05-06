@@ -1,0 +1,4 @@
+Knox is a self-hosted secret management service for Unix systems, CLI
+workflows, and optional FreeDesktop Secret Service integration.
+
+This package installs the Knox CLI, server, and D-Bus bridge binaries.

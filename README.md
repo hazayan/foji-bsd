@@ -145,8 +145,8 @@ FOJI_BUILD_PROFILE=foji-amd64
 That profile expands to:
 
 ```sh
-REQUESTED_PORTS="kunci zhamel zhamel-zfskey-kmod manticore"
-REPO_PACKAGE_ORIGINS="sysutils/kunci sysutils/zhamel sysutils/zhamel-zfskey-kmod databases/manticore"
+REQUESTED_PORTS="kunci zhamel zhamel-zfskey-kmod manticore nomad-pot-driver knox"
+REPO_PACKAGE_ORIGINS="sysutils/kunci sysutils/zhamel sysutils/zhamel-zfskey-kmod databases/manticore sysutils/nomad-pot-driver security/knox"
 ```
 
 For amd64 server nodes that need Manticore Search, build the manticore profile:

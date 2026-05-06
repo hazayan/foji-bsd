@@ -92,8 +92,8 @@ case "${FOJI_BUILD_PROFILE}" in
 			printf 'FOJI_BUILD_PROFILE=foji-amd64 requires FOJI_BUILDER_ARCH=amd64\n' >&2
 			exit 1
 		fi
-		REQUESTED_PORTS="kunci zhamel zhamel-zfskey-kmod manticore"
-		REPO_PACKAGE_ORIGINS="sysutils/kunci sysutils/zhamel sysutils/zhamel-zfskey-kmod databases/manticore"
+		REQUESTED_PORTS="kunci zhamel zhamel-zfskey-kmod manticore nomad-pot-driver knox"
+		REPO_PACKAGE_ORIGINS="sysutils/kunci sysutils/zhamel sysutils/zhamel-zfskey-kmod databases/manticore sysutils/nomad-pot-driver security/knox"
 		;;
 	manticore-amd64)
 		if [ "${FOJI_BUILDER_ARCH}" != "amd64" ]; then

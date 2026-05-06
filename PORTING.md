@@ -1,5 +1,21 @@
 # Porting Guidelines
 
+## Go Ports
+
+Go application ports should use the FreeBSD ports framework rather than custom
+toolchain plumbing. Prefer `USES=go:modules` with `GO_MODULE` set to the module
+path from `go.mod`, and use `GO_TARGET` tuples to install only the user-facing
+binaries that belong in the package.
+
+Pin only the minimum toolchain family required by upstream, for example
+`go:1.24+,modules` when `go.mod` declares `go 1.24.0`. Avoid packaging Go
+libraries or source trees; the package should install binaries, service files,
+configuration samples, and other runtime assets only.
+
+When upstream has no vendored modules, let the ports framework fetch module
+dependencies during the fetch phase. Do not let package build phases reach out
+to the network.
+
 ## Rust Ports
 
 Rust-based foji-bsd ports should avoid building `lang/rust` in poudriere. The

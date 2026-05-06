@@ -1,0 +1,7 @@
+TIMESTAMP = 1778102049
+SHA256 (go/sysutils_nomad-pot-driver/bsdpot-nomad-pot-driver-v0.10.0_GH0/v0.10.0.mod) = 4f7e7d0a9de8cffcc7b38d4d54db6158908fda3fdf1364ec1a604cccb7354f4a
+SIZE (go/sysutils_nomad-pot-driver/bsdpot-nomad-pot-driver-v0.10.0_GH0/v0.10.0.mod) = 3291
+SHA256 (go/sysutils_nomad-pot-driver/bsdpot-nomad-pot-driver-v0.10.0_GH0/v0.10.0.zip) = e4559dbabde8be374c0a873344f1759193c955795c281f4502e5d1b7f4180b7f
+SIZE (go/sysutils_nomad-pot-driver/bsdpot-nomad-pot-driver-v0.10.0_GH0/v0.10.0.zip) = 472466
+SHA256 (go/sysutils_nomad-pot-driver/bsdpot-nomad-pot-driver-v0.10.0_GH0/bsdpot-nomad-pot-driver-v0.10.0_GH0.tar.gz) = 9ea0d364ad6fb85195ea0abd84e36804afe341dce657fe4c49f145222cabfba3
+SIZE (go/sysutils_nomad-pot-driver/bsdpot-nomad-pot-driver-v0.10.0_GH0/bsdpot-nomad-pot-driver-v0.10.0_GH0.tar.gz) = 464515
