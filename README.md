@@ -36,7 +36,7 @@ PUBLISH=no
 Host packages observed on the current Artix/CachyOS-style builder:
 
 ```sh
-pacman -S qemu-full edk2-ovmf edk2-aarch64 cdrtools openssh rsync github-cli curl xz
+pacman -S qemu-full edk2-ovmf edk2-aarch64 cdrtools openssh openbsd-netcat rsync github-cli curl xz
 ```
 
 The aarch64 VM specifically needs `edk2-aarch64`. The similarly named
@@ -54,6 +54,8 @@ The script expects:
   `/usr/share/edk2/aarch64/QEMU_VARS.fd`.
 - `genisoimage` from `cdrtools` to create the NoCloud `cidata` ISO consumed by
   FreeBSD `nuageinit`.
+- `nc` from `openbsd-netcat`; the local host script uses it while waiting for
+  guest SSH to become reachable.
 - An SSH keypair for the builder user; by default `~/.ssh/vms` and
   `~/.ssh/vms.pub`.
 
@@ -73,6 +75,11 @@ On aarch64 the local builder defaults to 2 vCPUs and 4096 MiB of RAM. Earlier
 poudriere processed package metadata. Increase `FOJI_VM_MEM` only on a builder
 with enough free memory.
 
+On Linux hosts, active VirtualBox VMs can prevent QEMU from creating a KVM VM.
+The observed failure was `ioctl(KVM_CREATE_VM) failed: Input/output error` with
+`kvm: enabling virtualization on CPU0 failed` in the kernel log. Shut down
+VirtualBox guests before starting the local QEMU builder.
+
 The local builder currently defaults to FreeBSD's `quarterly` package branch
 and the matching `2026Q2` ports branch. Each architecture may also apply a
 temporary `PORTS_REF` pin selected to match the currently published FreeBSD 15
@@ -81,6 +88,13 @@ package set. This lets poudriere fetch large build dependencies such as
 aarch64 validation run for `REQUESTED_PORTS=kunci` built `ports-mgmt/pkg` and
 `sysutils/kunci`, fetched the rest of the dependency closure, and produced a
 239 MiB flat repository under `repo-output/FreeBSD:15:aarch64`.
+
+An amd64 relocation smoke run on `altair` with `FOJI_FORGE_DIR=/data/workspace/forge`,
+`FOJI_BUILD_PROFILE=kunci`, and `PUBLISH=no` completed the full local cycle:
+KVM boot, rsync into the guest, poudriere build, signed flat repository
+creation, and fetch back to the host. That first-run path created the poudriere
+jail from binary release sets and applied `freebsd-update`; it did not compile
+FreeBSD base.
 
 For GitHub release publication, prefer filtering the exported repository to
 custom runtime packages:
@@ -134,6 +148,10 @@ selected architecture, creates a persistent qcow2 overlay with a relative
 backing path, creates a NoCloud seed ISO, starts QEMU with host port forwarding,
 syncs this ports tree into the VM with rsync, runs poudriere there, copies
 `repo-output` back, and optionally uploads release assets with `gh`.
+
+`PKG_REPO_SIGNING_KEY_B64` is required even when `PUBLISH=no`, because the flat
+repository is signed before upload is considered. `gh` is only required when
+publishing release assets from the builder host.
 
 Use `scripts/local-qemu-build.sh reset` to stop the VM and remove generated
 builder state for the selected architecture. The reset preserves downloaded
