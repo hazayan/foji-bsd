@@ -1,4 +1,6 @@
-TIMESTAMP = 1776896280
+TIMESTAMP = 1778072864
+SHA256 (rust-1.94.0-x86_64-unknown-freebsd.tar.xz) = 1f448df5aa45a149b35798bd87cd48dc87d042630b8789433a0594cec1a542ca
+SIZE (rust-1.94.0-x86_64-unknown-freebsd.tar.xz) = 206601056
 SHA256 (rust/crates/base16ct-0.2.0.crate) = 4c7f02d4ea65f2c1853089ffd8d2787bdbc63de2f0d29dedbcf8ccdfa0ccd4cf
 SIZE (rust/crates/base16ct-0.2.0.crate) = 10240
 SHA256 (rust/crates/base64-0.22.1.crate) = 72b3254f16251a8381aa12e40e3c4d2f0199f8c6508fbecb9d91f575e0fbb8c6
@@ -97,3 +99,5 @@ SHA256 (rust/crates/zmij-1.0.18.crate) = 1966f8ac2c1f76987d69a74d0e0f929241c10e7
 SIZE (rust/crates/zmij-1.0.18.crate) = 24025
 SHA256 (hazayan-zhamel-0.9.0-v0.9.0_GH0.tar.gz) = 7f9a21e02186f614df7c1354bce779060a52747da0ea4a285b90dad93b2cd7e8
 SIZE (hazayan-zhamel-0.9.0-v0.9.0_GH0.tar.gz) = 142491
+SHA256 (rust-std-1.94.0-x86_64-unknown-uefi.tar.xz) = 31b56e8178dd2319e51ccc474959d247db2767cda7149fe3704d636df9aee1c9
+SIZE (rust-std-1.94.0-x86_64-unknown-uefi.tar.xz) = 25124840

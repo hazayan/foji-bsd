@@ -14,7 +14,9 @@ LICENSE_FILE=	${WRKSRC}/LICENSE
 
 ONLY_FOR_ARCHS=	amd64
 
-BUILD_DEPENDS=	rustup-init:devel/rustup-init
+MASTER_SITES+=	https://static.rust-lang.org/dist/:ruststd
+DISTFILES+=	${RUST_HOST_DIST}:ruststd \
+		${RUST_STD_DIST}:ruststd
 
 USES=		cargo
 
@@ -26,48 +28,41 @@ CARGO_BUILD=	yes
 CARGO_INSTALL=	no
 CARGO_TEST=	no
 CARGO_BUILD_ARGS=	--target x86_64-unknown-uefi --locked
-CARGO_ENV+=	RUSTUP_HOME=${RUSTUP_HOME}
-CARGO_ENV+=	CARGO_TARGET_X86_64_UNKNOWN_UEFI_LINKER=${RUSTUP_LLD}
-CARGO_ENV+=	RUSTFLAGS="-C ar=${AR}"
-RUSTUP_HOME=	${WRKDIR}/rustup-home
-RUSTUP_HOST_TRIPLE=	x86_64-unknown-freebsd
+CARGO_ENV+=	CARGO_TARGET_X86_64_UNKNOWN_UEFI_LINKER=${RUST_LLD}
 RUSTUP_TOOLCHAIN=	1.94.0
-RUSTUP_LLD=	${RUSTUP_HOME}/toolchains/${RUSTUP_TOOLCHAIN}-${RUSTUP_HOST_TRIPLE}/lib/rustlib/${RUSTUP_HOST_TRIPLE}/bin/rust-lld
-CC=		${RUSTUP_LLD}
-CARGO=		${WRKDIR}/cargo-home/bin/cargo
-RUSTC=		${WRKDIR}/cargo-home/bin/rustc
-RUSTDOC=	${WRKDIR}/cargo-home/bin/rustdoc
+RUST_HOST_TRIPLE=	x86_64-unknown-freebsd
+RUST_STD_TARGET=	x86_64-unknown-uefi
+RUST_HOST_DIST=	rust-${RUSTUP_TOOLCHAIN}-${RUST_HOST_TRIPLE}.tar.xz
+RUST_HOST_WRKSRC=	${WRKDIR}/rust-${RUSTUP_TOOLCHAIN}-${RUST_HOST_TRIPLE}
+RUST_STD_DIST=	rust-std-${RUSTUP_TOOLCHAIN}-${RUST_STD_TARGET}.tar.xz
+RUST_STD_WRKSRC=	${WRKDIR}/rust-std-${RUSTUP_TOOLCHAIN}-${RUST_STD_TARGET}
+RUST_SYSROOT=	${WRKDIR}/rust-sysroot
+RUST_LLD=	${RUST_SYSROOT}/lib/rustlib/${RUST_HOST_TRIPLE}/bin/rust-lld
+CC=		${RUST_LLD}
+RUSTFLAGS+=	-C linker=${RUST_LLD}
+CARGO=		${RUST_SYSROOT}/bin/cargo
+RUSTC=		${RUST_SYSROOT}/bin/rustc
+RUSTDOC=	${RUST_SYSROOT}/bin/rustdoc
 
 PLIST_FILES=	share/efi/FreeBSD/zhamel.efi
 
 .include "Makefile.crates"
 
 do-configure:
-	${MKDIR} ${RUSTUP_HOME} ${WRKDIR}/cargo-home
-	cd ${WRKSRC} && ${SETENVI} ${WRK_ENV} ${MAKE_ENV} \
-		HOME=${WRKDIR} \
-		CARGO_HOME=${WRKDIR}/cargo-home \
-		RUSTUP_HOME=${RUSTUP_HOME} \
-		RUSTUP_INIT_SKIP_PATH_CHECK=yes \
-		RUSTUP_SELF_UPDATE_DISABLE=1 \
-		${LOCALBASE}/bin/rustup-init --profile minimal --default-toolchain none -y
-	cd ${WRKSRC} && ${SETENVI} ${WRK_ENV} ${MAKE_ENV} \
-		HOME=${WRKDIR} \
-		CARGO_HOME=${WRKDIR}/cargo-home \
-		RUSTUP_HOME=${RUSTUP_HOME} \
-		RUSTUP_SELF_UPDATE_DISABLE=1 \
-		${WRKDIR}/cargo-home/bin/rustup toolchain install ${RUSTUP_TOOLCHAIN} \
-		--profile minimal --target x86_64-unknown-uefi
-	cd ${WRKSRC} && ${SETENVI} ${WRK_ENV} ${MAKE_ENV} \
-		HOME=${WRKDIR} \
-		CARGO_HOME=${WRKDIR}/cargo-home \
-		RUSTUP_HOME=${RUSTUP_HOME} \
-		RUSTUP_SELF_UPDATE_DISABLE=1 \
-		${WRKDIR}/cargo-home/bin/rustup default ${RUSTUP_TOOLCHAIN}
+	${MKDIR} ${RUST_SYSROOT}
+	cd ${RUST_HOST_WRKSRC} && ${SH} install.sh \
+		--prefix=${RUST_SYSROOT} \
+		--disable-ldconfig
+	cd ${RUST_STD_WRKSRC} && ${SH} install.sh \
+		--prefix=${RUST_SYSROOT} \
+		--disable-ldconfig
+	${MKDIR} ${WRKSRC}/.cargo
+	${PRINTF} "[source.cargo]\ndirectory = '${WRKSRC}/cargo-crates'\n[source.crates-io]\nreplace-with = 'cargo'\n" \
+		> ${WRKSRC}/.cargo/config.toml
 
 do-install:
 	${MKDIR} ${STAGEDIR}${PREFIX}/share/efi/FreeBSD
-	${INSTALL_DATA} ${WRKDIR}/target/x86_64-unknown-uefi/release/zhamel.efi \
+	${INSTALL_DATA} ${CARGO_TARGET_DIR}/x86_64-unknown-uefi/release/zhamel.efi \
 		${STAGEDIR}${PREFIX}/share/efi/FreeBSD/zhamel.efi
 
 .include <bsd.port.mk>

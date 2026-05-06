@@ -103,6 +103,32 @@ REQUESTED_PORTS=kunci
 REPO_PACKAGE_ORIGINS="sysutils/kunci"
 ```
 
+For amd64 sysbsd installs, build the bootloader repository profile:
+
+```sh
+FOJI_BUILDER_ARCH=amd64
+FOJI_BUILD_PROFILE=sysbsd-amd64
+```
+
+That profile expands to:
+
+```sh
+REQUESTED_PORTS="kunci zhamel zhamel-zfskey-kmod"
+REPO_PACKAGE_ORIGINS="sysutils/kunci sysutils/zhamel sysutils/zhamel-zfskey-kmod"
+```
+
+`zhamel` and `zhamel-zfskey-kmod` are amd64-only ports, so the profile refuses
+to run on non-amd64 builders.
+
+`sysutils/zhamel` intentionally uses the official Rust standalone
+`rust-<version>-x86_64-unknown-freebsd` toolchain plus the matching
+`rust-std-<version>-x86_64-unknown-uefi` component, both as distfiles installed
+into a private build sysroot. Do not invoke `rustup toolchain install` from a
+port phase: poudriere fetches distfiles before the build, then blocks network
+access during configure/build. Do not mix the FreeBSD-packaged Rust compiler
+with upstream target components either; rustc rejects metadata from a different
+compiler build even when the version number is the same.
+
 The script downloads the official FreeBSD `BASIC-CLOUDINIT-zfs` image for the
 selected architecture, creates a persistent qcow2 overlay with a relative
 backing path, creates a NoCloud seed ISO, starts QEMU with host port forwarding,
