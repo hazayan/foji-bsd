@@ -87,6 +87,14 @@ case "${FOJI_BUILD_PROFILE}" in
 		REQUESTED_PORTS="kunci zhamel zhamel-zfskey-kmod"
 		REPO_PACKAGE_ORIGINS="sysutils/kunci sysutils/zhamel sysutils/zhamel-zfskey-kmod"
 		;;
+	manticore-amd64)
+		if [ "${FOJI_BUILDER_ARCH}" != "amd64" ]; then
+			printf 'FOJI_BUILD_PROFILE=manticore-amd64 requires FOJI_BUILDER_ARCH=amd64\n' >&2
+			exit 1
+		fi
+		REQUESTED_PORTS="manticore"
+		REPO_PACKAGE_ORIGINS="databases/manticore"
+		;;
 	*)
 		printf 'Unsupported FOJI_BUILD_PROFILE: %s\n' "${FOJI_BUILD_PROFILE}" >&2
 		exit 1
