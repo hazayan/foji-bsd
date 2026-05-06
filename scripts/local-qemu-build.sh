@@ -29,7 +29,7 @@ case "${FOJI_BUILDER_ARCH}" in
 	amd64)
 		FOJI_VM_CPUS="${FOJI_VM_CPUS:-4}"
 		FOJI_VM_MEM="${FOJI_VM_MEM:-8192}"
-		PACKAGE_FETCH_BRANCH="${PACKAGE_FETCH_BRANCH:-latest}"
+		PACKAGE_FETCH_BRANCH="${PACKAGE_FETCH_BRANCH:-quarterly}"
 		FREEBSD_IMAGE_URL="${FREEBSD_IMAGE_URL:-https://download.freebsd.org/releases/VM-IMAGES/${FREEBSD_RELEASE}/amd64/Latest/FreeBSD-${FREEBSD_RELEASE}-amd64-BASIC-CLOUDINIT-zfs.raw.xz}"
 		PKG_ABI="${PKG_ABI:-FreeBSD:${FREEBSD_MAJOR}:amd64}"
 		POUDRIERE_ARCH="${POUDRIERE_ARCH:-amd64}"
@@ -57,10 +57,19 @@ PORTS_BRANCH="${PORTS_BRANCH:-}"
 if [ -z "${PORTS_BRANCH}" ] && [ "${PACKAGE_FETCH_BRANCH}" = "quarterly" ]; then
 	PORTS_BRANCH="2026Q2"
 fi
-if [ -z "${PORTS_REF}" ] && [ "${FOJI_BUILDER_ARCH}" = "aarch64" ] && [ "${PORTS_BRANCH}" = "2026Q2" ]; then
-	# Temporary pin to the 2026Q2 state before ftp/curl moved past the
-	# currently published FreeBSD:15:aarch64 quarterly package set.
-	PORTS_REF="52322f7d7b98a6556700411ffdccbe2473fd1386"
+if [ -z "${PORTS_REF}" ] && [ "${PORTS_BRANCH}" = "2026Q2" ]; then
+	case "${FOJI_BUILDER_ARCH}" in
+		aarch64)
+			# Temporary pin to the 2026Q2 state before ftp/curl moved past
+			# the currently published FreeBSD:15:aarch64 package set.
+			PORTS_REF="52322f7d7b98a6556700411ffdccbe2473fd1386"
+			;;
+		amd64)
+			# Temporary pin to the 2026Q2 cherry-pick where ftp/curl is
+			# 8.19.0_2, matching the current FreeBSD:15:amd64 packages.
+			PORTS_REF="7c7fc885b5f45096bd3fdad6ac1c43715111a4ef"
+			;;
+	esac
 fi
 
 case "${FOJI_BUILD_PROFILE}" in

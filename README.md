@@ -73,11 +73,12 @@ On aarch64 the local builder defaults to 2 vCPUs and 4096 MiB of RAM. Earlier
 poudriere processed package metadata. Increase `FOJI_VM_MEM` only on a builder
 with enough free memory.
 
-The aarch64 path currently defaults to FreeBSD's `quarterly` package branch,
-the matching `2026Q2` ports branch, and a temporary `PORTS_REF` pin selected to
-match the published `FreeBSD:15:aarch64` package set. This lets poudriere fetch
-`lang/rust` as a binary package instead of building Rust from source. The clean
-validation run for `REQUESTED_PORTS=kunci` built `ports-mgmt/pkg` and
+The local builder currently defaults to FreeBSD's `quarterly` package branch
+and the matching `2026Q2` ports branch. Each architecture may also apply a
+temporary `PORTS_REF` pin selected to match the currently published FreeBSD 15
+package set. This lets poudriere fetch large build dependencies such as
+`lang/rust` as binary packages instead of building them from source. The clean
+aarch64 validation run for `REQUESTED_PORTS=kunci` built `ports-mgmt/pkg` and
 `sysutils/kunci`, fetched the rest of the dependency closure, and produced a
 239 MiB flat repository under `repo-output/FreeBSD:15:aarch64`.
 

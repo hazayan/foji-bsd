@@ -3,11 +3,18 @@
 ## Rust Ports
 
 Rust-based foji-bsd ports should avoid building `lang/rust` in poudriere. The
-preferred mechanism depends on whether rustup supports the build host target.
+preferred mechanism depends on whether the port builds native FreeBSD binaries
+or needs a non-native Rust target.
 
-On `amd64`, use the rustup-managed toolchain pattern from `sysutils/zhamel` and
-the `amd64` path in `sysutils/kunci` instead of depending directly on
-`lang/rust`.
+For native FreeBSD binaries, keep the standard `USES=cargo` dependency path and
+align the poudriere ports tree branch with the upstream package branch so
+`lang/rust` can be fetched as a binary package. This is the pattern used by
+`sysutils/kunci`.
+
+Use the rustup-managed toolchain pattern from `sysutils/zhamel` only when a port
+needs a non-native target such as `x86_64-unknown-uefi`. Rustup downloads
+toolchains during `do-configure`, so it is not appropriate for a normal native
+package build unless those artifacts are supplied without network access.
 
 Keep `USES=cargo` so the FreeBSD ports framework still handles vendored crates,
 `Makefile.crates`, and cargo targets, but set `CARGO_BUILDDEP=no` and add:
@@ -40,15 +47,13 @@ install phase is acceptable.
 
 Do not apply this pattern blindly on `aarch64`: the FreeBSD `devel/rustup-init`
 port is currently `amd64`-only, and upstream Rust only distributes rustup host
-tools for the FreeBSD x86 host targets. For native `aarch64` Rust ports, keep the
-standard `USES=cargo` dependency path and align the poudriere ports tree branch
-with the upstream package branch so `lang/rust` can be fetched as a binary
-package. The local QEMU builder defaults aarch64 to FreeBSD's `quarterly`
-package branch and the matching `2026Q2` ports branch for this reason. It also
-temporarily pins `PORTS_REF` to the 2026Q2 commit before `ftp/curl` moved beyond
-the currently published FreeBSD:15:aarch64 quarterly package set. If the
-upstream quarterly package set catches up or drifts again, update `PORTS_REF` to
-the package-compatible snapshot before starting a long build.
+tools for the FreeBSD x86 host targets. The local QEMU builder defaults to
+FreeBSD's `quarterly` package branch and the matching `2026Q2` ports branch so
+native Rust ports can fetch `lang/rust`. Architecture-specific `PORTS_REF`
+defaults temporarily pin the ports tree to package-compatible snapshots when the
+branch advances ahead of the published package set. If the upstream quarterly
+package set catches up or drifts again, update `PORTS_REF` to the
+package-compatible snapshot before starting a long build.
 
 For native Rust binaries, pin the full host toolchain triple per architecture,
 for example:
