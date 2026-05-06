@@ -2,6 +2,8 @@
 
 Custom FreeBSD ports tree and local package repository builder.
 
+Porting conventions for custom ports live in [PORTING.md](PORTING.md).
+
 ## Local QEMU builder
 
 The repository is built locally in a persistent FreeBSD QEMU VM and the finished
@@ -66,17 +68,56 @@ image used here is about 6 GiB, which is not enough for poudriere to extract
 `FOJI_VM_DISK_SIZE`, defaulting to `64G`, before first boot so the FreeBSD grow
 step expands the root partition and ZFS pool into usable builder space.
 
+On aarch64 the local builder defaults to 2 vCPUs and 4096 MiB of RAM. Earlier
+8 GiB runs on a 16 GiB workstation were OOM-killed by the Linux host while
+poudriere processed package metadata. Increase `FOJI_VM_MEM` only on a builder
+with enough free memory.
+
+The aarch64 path currently defaults to FreeBSD's `quarterly` package branch,
+the matching `2026Q2` ports branch, and a temporary `PORTS_REF` pin selected to
+match the published `FreeBSD:15:aarch64` package set. This lets poudriere fetch
+`lang/rust` as a binary package instead of building Rust from source. The clean
+validation run for `REQUESTED_PORTS=kunci` built `ports-mgmt/pkg` and
+`sysutils/kunci`, fetched the rest of the dependency closure, and produced a
+239 MiB flat repository under `repo-output/FreeBSD:15:aarch64`.
+
+For GitHub release publication, prefer filtering the exported repository to
+custom runtime packages:
+
+```sh
+FOJI_BUILD_PROFILE=kunci
+```
+
+The complete poudriere output is useful for diagnostics, but upstream package
+filenames may contain commas for epochs. GitHub release assets normalize those
+commas, which breaks pkg repository metadata for those upstream packages. The
+custom `sysutils/kunci` package has only FreeBSD base shared-library runtime
+requirements, so it can be published by itself while consumers keep the normal
+FreeBSD repositories enabled.
+
+The `kunci` profile expands to:
+
+```sh
+REQUESTED_PORTS=kunci
+REPO_PACKAGE_ORIGINS="sysutils/kunci"
+```
+
 The script downloads the official FreeBSD `BASIC-CLOUDINIT-zfs` image for the
 selected architecture, creates a persistent qcow2 overlay with a relative
 backing path, creates a NoCloud seed ISO, starts QEMU with host port forwarding,
 syncs this ports tree into the VM with rsync, runs poudriere there, copies
 `repo-output` back, and optionally uploads release assets with `gh`.
 
+Use `scripts/local-qemu-build.sh reset` to stop the VM and remove generated
+builder state for the selected architecture. The reset preserves downloaded
+FreeBSD images but deletes the qcow2 overlay, cloud-init seed, SSH known-hosts
+file, serial log, and UEFI variable store so the next run boots a fresh guest.
+
 The release URL remains directly usable as a pkg repository URL:
 
 ```conf
 foji: {
-  url: "https://github.com/hazayan/foji-bsd/releases/download/repo-FreeBSD:15:aarch64",
+  url: "https://github.com/hazayan/foji-bsd/releases/download/repo-FreeBSD-15-aarch64",
   mirror_type: "none",
   signature_type: "pubkey",
   pubkey: "/usr/local/etc/pkg/keys/foji.pub",

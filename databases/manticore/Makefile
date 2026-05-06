@@ -23,7 +23,7 @@ WWW=		https://manticoresearch.com/
 LICENSE=	GPLv3
 LICENSE_FILE=	${WRKSRC}/LICENSE
 
-ONLY_FOR_ARCHS=	aarch64 amd64
+ONLY_FOR_ARCHS=	amd64
 
 BUILD_DEPENDS=	bison:devel/bison \
 		boost-libs>0:devel/boost-libs \

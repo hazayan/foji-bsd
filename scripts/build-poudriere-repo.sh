@@ -8,9 +8,16 @@ POUDRIERE_ARCH="${POUDRIERE_ARCH:-arm64.aarch64}"
 TARGET_ARCH="${TARGET_ARCH:-aarch64}"
 JAIL_NAME="${JAIL_NAME:-freebsd${FREEBSD_MAJOR}-aarch64}"
 PORTS_TREE="${PORTS_TREE:-foji}"
+PORTS_BRANCH="${PORTS_BRANCH:-}"
+PORTS_REF="${PORTS_REF:-}"
+PORTS_GIT_DEPTH="${PORTS_GIT_DEPTH:-200}"
 SET_NAME="${SET_NAME:-default}"
 REQUESTED_PORTS="${REQUESTED_PORTS:-auto}"
+REPO_PACKAGE_ORIGINS="${REPO_PACKAGE_ORIGINS:-}"
 PACKAGE_FETCH_BRANCH="${PACKAGE_FETCH_BRANCH:-latest}"
+PACKAGE_FETCH_URL="${PACKAGE_FETCH_URL:-}"
+PACKAGE_FETCH_WHITELIST="${PACKAGE_FETCH_WHITELIST:-}"
+POUDRIERE_BULK_FLAGS="${POUDRIERE_BULK_FLAGS:--v}"
 POUDRIERE_JAIL_FLAGS="${POUDRIERE_JAIL_FLAGS:--X}"
 HEARTBEAT_INTERVAL="${HEARTBEAT_INTERVAL:-60}"
 REPO_OUT="${REPO_OUT:-repo-output/${PKG_ABI}}"
@@ -217,7 +224,14 @@ KEEP_OLD_PACKAGES=no
 KEEP_OLD_PACKAGES_COUNT=1
 CHECK_CHANGED_OPTIONS=verbose
 CHECK_CHANGED_DEPS=yes
+PACKAGE_FETCH_BRANCH=${PACKAGE_FETCH_BRANCH}
 EOF
+	if [ -n "${PACKAGE_FETCH_URL}" ]; then
+		printf 'PACKAGE_FETCH_URL=%s\n' "${PACKAGE_FETCH_URL}" >> /usr/local/etc/poudriere.conf
+	fi
+	if [ -n "${PACKAGE_FETCH_WHITELIST}" ]; then
+		printf 'PACKAGE_FETCH_WHITELIST=%s\n' "${PACKAGE_FETCH_WHITELIST}" >> /usr/local/etc/poudriere.conf
+	fi
 
 	printf '%s' "${PKG_REPO_SIGNING_KEY_B64}" | base64 -d > "${SIGNING_KEY}"
 	chmod 0400 "${SIGNING_KEY}"
@@ -240,7 +254,22 @@ create_jail_and_ports() {
 
 	log "Creating poudriere ports tree ${PORTS_TREE}"
 	if ! poudriere ports -l -q | awk '{print $1}' | grep -qx "${PORTS_TREE}"; then
-		poudriere ports -c -p "${PORTS_TREE}" -m git+https
+		if [ -n "${PORTS_BRANCH}" ]; then
+			poudriere ports -c -p "${PORTS_TREE}" -m git+https -B "${PORTS_BRANCH}"
+		else
+			poudriere ports -c -p "${PORTS_TREE}" -m git+https
+		fi
+	fi
+	if [ -n "${PORTS_BRANCH}" ]; then
+		log "Synchronizing poudriere ports tree ${PORTS_TREE} to ${PORTS_REF:-${PORTS_BRANCH}}"
+		# This is poudriere-managed state. It is intentionally dirtied by
+		# overlay_ports, so clean it before syncing the upstream branch.
+		git -C "${PORTS_ROOT}" reset --hard
+		git -C "${PORTS_ROOT}" clean -fd
+		git -C "${PORTS_ROOT}" fetch --depth="${PORTS_GIT_DEPTH}" origin "${PORTS_BRANCH}"
+		git -C "${PORTS_ROOT}" checkout -B "${PORTS_BRANCH}" "${PORTS_REF:-FETCH_HEAD}"
+	elif poudriere ports -l -q | awk '{print $1}' | grep -qx "${PORTS_TREE}"; then
+		poudriere ports -u -p "${PORTS_TREE}"
 	fi
 }
 
@@ -269,12 +298,28 @@ build_repo() {
 	fi
 
 	log "Building package set with poudriere"
+	# shellcheck disable=SC2086
 	poudriere bulk \
 		-j "${JAIL_NAME}" \
 		-p "${PORTS_TREE}" \
 		-z "${SET_NAME}" \
 		-b "${PACKAGE_FETCH_BRANCH}" \
+		${POUDRIERE_BULK_FLAGS} \
 		-f "${PKGLIST}"
+}
+
+package_origin() {
+	pkg query -F "$1" '%o'
+}
+
+origin_selected_for_repo() {
+	origin="$1"
+	if [ -z "${REPO_PACKAGE_ORIGINS}" ]; then
+		return 0
+	fi
+
+	# shellcheck disable=SC2086
+	word_contains "${origin}" ${REPO_PACKAGE_ORIGINS}
 }
 
 publishable_flat_repo() {
@@ -282,14 +327,21 @@ publishable_flat_repo() {
 	rm -rf "${REPO_OUT}"
 	mkdir -p "${REPO_OUT}"
 
-	if [ ! -d "${PACKAGES_ROOT}/All" ]; then
+	package_all_dir="$(realpath "${PACKAGES_ROOT}/All" 2>/dev/null || true)"
+	if [ -z "${package_all_dir}" ] || [ ! -d "${package_all_dir}" ]; then
 		echo "Expected poudriere package directory not found: ${PACKAGES_ROOT}/All" >&2
 		echo "Available package directories:" >&2
 		find "${POUDRIERE_BASE}/data/packages" -maxdepth 2 -type d -print 2>/dev/null || true
 		exit 1
 	fi
 
-	find "${PACKAGES_ROOT}/All" -maxdepth 1 -type f -name '*.pkg' -exec cp -p {} "${REPO_OUT}/" \;
+	for package_file in "${package_all_dir}"/*.pkg; do
+		[ -f "${package_file}" ] || continue
+		origin="$(package_origin "${package_file}")"
+		if origin_selected_for_repo "${origin}"; then
+			cp -p "${package_file}" "${REPO_OUT}/"
+		fi
+	done
 	cp "${SIGNING_PUB}" "${REPO_OUT}/foji.pub"
 
 	if ! find "${REPO_OUT}" -maxdepth 1 -type f -name '*.pkg' | grep -q .; then
@@ -301,7 +353,7 @@ publishable_flat_repo() {
 	ls -lah "${REPO_OUT}"
 }
 
-main() {
+build_all() {
 	start_heartbeat
 	require_secret
 	install_packages
@@ -315,6 +367,27 @@ main() {
 	overlay_ports
 	build_repo
 	publishable_flat_repo
+}
+
+export_repo() {
+	require_secret
+	configure_poudriere
+	publishable_flat_repo
+}
+
+main() {
+	case "${1:-all}" in
+		all)
+			build_all
+			;;
+		export)
+			export_repo
+			;;
+		*)
+			echo "Usage: $0 [all|export]" >&2
+			exit 1
+			;;
+	esac
 }
 
 main "$@"

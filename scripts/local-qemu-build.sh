@@ -8,19 +8,28 @@ FOJI_FORGE_DIR="${FOJI_FORGE_DIR:-${HOME}/devel/forge}"
 FOJI_SSH_PUBLIC_KEY="${FOJI_SSH_PUBLIC_KEY:-${HOME}/.ssh/vms.pub}"
 FOJI_SSH_PRIVATE_KEY="${FOJI_SSH_PRIVATE_KEY:-${HOME}/.ssh/vms}"
 FOJI_SSH_PORT="${FOJI_SSH_PORT:-2222}"
-FOJI_VM_CPUS="${FOJI_VM_CPUS:-4}"
-FOJI_VM_MEM="${FOJI_VM_MEM:-8192}"
+FOJI_VM_CPUS="${FOJI_VM_CPUS:-}"
+FOJI_VM_MEM="${FOJI_VM_MEM:-}"
 FOJI_VM_DISK_SIZE="${FOJI_VM_DISK_SIZE:-64G}"
 FOJI_REMOTE_USER="${FOJI_REMOTE_USER:-freebsd}"
 FOJI_REMOTE_DIR="${FOJI_REMOTE_DIR:-/home/freebsd/foji-bsd}"
+FOJI_BUILD_PROFILE="${FOJI_BUILD_PROFILE:-}"
 REQUESTED_PORTS="${REQUESTED_PORTS:-auto}"
-PACKAGE_FETCH_BRANCH="${PACKAGE_FETCH_BRANCH:-latest}"
+REPO_PACKAGE_ORIGINS="${REPO_PACKAGE_ORIGINS:-}"
+PACKAGE_FETCH_BRANCH="${PACKAGE_FETCH_BRANCH:-}"
+PACKAGE_FETCH_URL="${PACKAGE_FETCH_URL:-}"
+PACKAGE_FETCH_WHITELIST="${PACKAGE_FETCH_WHITELIST:-}"
+POUDRIERE_BULK_FLAGS="${POUDRIERE_BULK_FLAGS:--v}"
+PORTS_REF="${PORTS_REF:-}"
 SIGNING_TYPE="${SIGNING_TYPE:-ecdsa}"
 GITHUB_REPOSITORY="${GITHUB_REPOSITORY:-hazayan/foji-bsd}"
 PUBLISH="${PUBLISH:-no}"
 
 case "${FOJI_BUILDER_ARCH}" in
 	amd64)
+		FOJI_VM_CPUS="${FOJI_VM_CPUS:-4}"
+		FOJI_VM_MEM="${FOJI_VM_MEM:-8192}"
+		PACKAGE_FETCH_BRANCH="${PACKAGE_FETCH_BRANCH:-latest}"
 		FREEBSD_IMAGE_URL="${FREEBSD_IMAGE_URL:-https://download.freebsd.org/releases/VM-IMAGES/${FREEBSD_RELEASE}/amd64/Latest/FreeBSD-${FREEBSD_RELEASE}-amd64-BASIC-CLOUDINIT-zfs.raw.xz}"
 		PKG_ABI="${PKG_ABI:-FreeBSD:${FREEBSD_MAJOR}:amd64}"
 		POUDRIERE_ARCH="${POUDRIERE_ARCH:-amd64}"
@@ -28,6 +37,9 @@ case "${FOJI_BUILDER_ARCH}" in
 		JAIL_NAME="${JAIL_NAME:-freebsd${FREEBSD_MAJOR}-amd64}"
 		;;
 	aarch64)
+		FOJI_VM_CPUS="${FOJI_VM_CPUS:-2}"
+		FOJI_VM_MEM="${FOJI_VM_MEM:-4096}"
+		PACKAGE_FETCH_BRANCH="${PACKAGE_FETCH_BRANCH:-quarterly}"
 		FREEBSD_IMAGE_URL="${FREEBSD_IMAGE_URL:-https://download.freebsd.org/releases/VM-IMAGES/${FREEBSD_RELEASE}/aarch64/Latest/FreeBSD-${FREEBSD_RELEASE}-arm64-aarch64-BASIC-CLOUDINIT-zfs.raw.xz}"
 		PKG_ABI="${PKG_ABI:-FreeBSD:${FREEBSD_MAJOR}:aarch64}"
 		POUDRIERE_ARCH="${POUDRIERE_ARCH:-arm64.aarch64}"
@@ -41,9 +53,32 @@ case "${FOJI_BUILDER_ARCH}" in
 esac
 
 PORTS_TREE="${PORTS_TREE:-foji}"
+PORTS_BRANCH="${PORTS_BRANCH:-}"
+if [ -z "${PORTS_BRANCH}" ] && [ "${PACKAGE_FETCH_BRANCH}" = "quarterly" ]; then
+	PORTS_BRANCH="2026Q2"
+fi
+if [ -z "${PORTS_REF}" ] && [ "${FOJI_BUILDER_ARCH}" = "aarch64" ] && [ "${PORTS_BRANCH}" = "2026Q2" ]; then
+	# Temporary pin to the 2026Q2 state before ftp/curl moved past the
+	# currently published FreeBSD:15:aarch64 quarterly package set.
+	PORTS_REF="52322f7d7b98a6556700411ffdccbe2473fd1386"
+fi
+
+case "${FOJI_BUILD_PROFILE}" in
+	"")
+		;;
+	kunci)
+		REQUESTED_PORTS="kunci"
+		REPO_PACKAGE_ORIGINS="sysutils/kunci"
+		;;
+	*)
+		printf 'Unsupported FOJI_BUILD_PROFILE: %s\n' "${FOJI_BUILD_PROFILE}" >&2
+		exit 1
+		;;
+esac
+
 SET_NAME="${SET_NAME:-default}"
 POUDRIERE_JAIL_FLAGS="${POUDRIERE_JAIL_FLAGS:--X}"
-RELEASE_TAG="${RELEASE_TAG:-repo-${PKG_ABI}}"
+RELEASE_TAG="${RELEASE_TAG:-repo-${PKG_ABI//:/-}}"
 REPO_OUT="${REPO_OUT:-repo-output/${PKG_ABI}}"
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
@@ -206,6 +241,13 @@ prepare() {
 	create_seed_iso
 }
 
+reset_builder() {
+	require_host_tools
+	stop_vm
+	log "Removing generated builder state ${STATE_DIR}"
+	rm -rf "${STATE_DIR}"
+}
+
 qemu_is_running() {
 	[ -f "${PID_FILE}" ] || return 1
 	local pid
@@ -351,9 +393,15 @@ build_repo() {
 		write_env_line TARGET_ARCH "${TARGET_ARCH}"
 		write_env_line JAIL_NAME "${JAIL_NAME}"
 		write_env_line PORTS_TREE "${PORTS_TREE}"
+		write_env_line PORTS_BRANCH "${PORTS_BRANCH}"
+		write_env_line PORTS_REF "${PORTS_REF}"
 		write_env_line SET_NAME "${SET_NAME}"
 		write_env_line REQUESTED_PORTS "${REQUESTED_PORTS}"
+		write_env_line REPO_PACKAGE_ORIGINS "${REPO_PACKAGE_ORIGINS}"
 		write_env_line PACKAGE_FETCH_BRANCH "${PACKAGE_FETCH_BRANCH}"
+		write_env_line PACKAGE_FETCH_URL "${PACKAGE_FETCH_URL}"
+		write_env_line PACKAGE_FETCH_WHITELIST "${PACKAGE_FETCH_WHITELIST}"
+		write_env_line POUDRIERE_BULK_FLAGS "${POUDRIERE_BULK_FLAGS}"
 		write_env_line POUDRIERE_JAIL_FLAGS "${POUDRIERE_JAIL_FLAGS}"
 		write_env_line REPO_OUT "${REPO_OUT}"
 		write_env_line SIGNING_TYPE "${SIGNING_TYPE}"
@@ -451,6 +499,7 @@ Usage: $0 <command>
 
 Commands:
   prepare   Download the cloud-init image, create the overlay, and create seed ISO
+  reset     Stop the VM and remove generated builder state, preserving downloads
   start     Start the persistent QEMU builder VM
   wait      Wait until SSH is available
   sync      Rsync the ports tree into the VM
@@ -463,8 +512,10 @@ Commands:
 Important environment:
   FOJI_FORGE_DIR=${FOJI_FORGE_DIR}
   FOJI_BUILDER_ARCH=${FOJI_BUILDER_ARCH}
+  FOJI_BUILD_PROFILE=${FOJI_BUILD_PROFILE}
   FOJI_VM_DISK_SIZE=${FOJI_VM_DISK_SIZE}
   REQUESTED_PORTS=${REQUESTED_PORTS}
+  REPO_PACKAGE_ORIGINS=${REPO_PACKAGE_ORIGINS}
   PUBLISH=${PUBLISH}
 EOF
 }
@@ -472,6 +523,7 @@ EOF
 command="${1:-}"
 case "${command}" in
 	prepare) prepare ;;
+	reset) reset_builder ;;
 	start) start_vm ;;
 	wait) wait_for_ssh ;;
 	sync) sync_repo ;;
