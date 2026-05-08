@@ -268,6 +268,11 @@ access during configure/build. Do not mix the FreeBSD-packaged Rust compiler
 with upstream target components either; rustc rejects metadata from a different
 compiler build even when the version number is the same.
 
+For aarch64 Rust ports, keep using the normal FreeBSD `lang/rust` package path
+for now. As of the FreeBSD `2026Q2` ports branch, `devel/rustup-init` is still
+`ONLY_FOR_ARCHS=amd64`, so the amd64 rustup-managed pattern is not portable to
+the aarch64 builder yet.
+
 The script downloads the official FreeBSD `BASIC-CLOUDINIT-zfs` image for the
 selected architecture, creates a persistent qcow2 overlay with a relative
 backing path, creates a NoCloud seed ISO, starts QEMU with host port forwarding,
