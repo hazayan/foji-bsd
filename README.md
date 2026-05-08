@@ -81,6 +81,9 @@ room for poudriere jails, packages, distfiles, and work directories. Keep the
 exact ZFS pool/dataset names as builder-machine IaC once the final disks are
 known.
 
+Builder-machine notes, storage recommendations, signing policy, and open IaC
+decisions live in [docs/builder-machine.md](docs/builder-machine.md).
+
 ## Local QEMU Builder
 
 Default aarch64 build:
@@ -192,6 +195,15 @@ scripts/show-ports-ref-pins.sh
 
 Refreshing those pins should be paired with a targeted build that proves large
 binary dependencies are still fetched rather than rebuilt.
+
+Prepare a dry-run refresh plan without editing defaults:
+
+```sh
+scripts/refresh-ports-ref.sh all
+```
+
+Run the printed validation command first. Only update the default pins after
+the targeted build succeeds.
 
 An amd64 relocation smoke run on `altair` with `FOJI_FORGE_DIR=/data/workspace/forge`,
 `FOJI_BUILD_PROFILE=kunci`, and `PUBLISH=no` completed the full local cycle:
@@ -323,6 +335,10 @@ syncs this ports tree into the VM with rsync, runs poudriere there, copies
 repository is signed before upload is considered. `hut` is required when
 publishing to SourceHut Pages. `gh` is only required when explicitly publishing
 to GitHub releases with `RELEASE_TARGET=github`.
+
+Unsigned local repository output is intentionally not a supported default mode.
+Smoke builds should exercise the same signed metadata path used by published
+repositories.
 
 Use `scripts/local-qemu-build.sh reset` to stop the VM and remove generated
 builder state for the selected architecture. The reset preserves downloaded
