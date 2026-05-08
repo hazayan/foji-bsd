@@ -74,6 +74,13 @@ Host packages observed on the current Artix/CachyOS-style builder:
 pacman -S qemu-full edk2-ovmf edk2-aarch64 cdrtools openssh openbsd-netcat rsync hut curl xz
 ```
 
+Validate a candidate builder host without installing anything:
+
+```sh
+FOJI_BUILDER_ARCH=amd64 scripts/check-builder-host.sh
+FOJI_BUILDER_ARCH=aarch64 scripts/check-builder-host.sh
+```
+
 The aarch64 VM specifically needs `edk2-aarch64`. The similarly named
 `qemu-system-arm-firmware` package provides `/usr/share/qemu/edk2-arm-code.fd`,
 but that firmware targets armv7. With that wrong firmware, QEMU starts and the
