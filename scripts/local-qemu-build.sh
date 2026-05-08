@@ -231,9 +231,17 @@ verify_image_checksum() {
 		return 0
 	fi
 	[ -n "${FREEBSD_IMAGE_SHA512:-}" ] || die "FREEBSD_IMAGE_SHA512 is required for ${FREEBSD_IMAGE_URL}; set it to the expected SHA512 or to 'skip'"
-	require_cmd sha512sum
 	log "Verifying SHA512 for ${IMAGE_XZ}"
-	printf '%s  %s\n' "${FREEBSD_IMAGE_SHA512}" "${IMAGE_XZ}" | sha512sum -c -
+	if command -v sha512sum >/dev/null 2>&1; then
+		printf '%s  %s\n' "${FREEBSD_IMAGE_SHA512}" "${IMAGE_XZ}" | sha512sum -c -
+	elif command -v sha512 >/dev/null 2>&1; then
+		local actual
+		actual="$(sha512 -q "${IMAGE_XZ}")"
+		[ "${actual}" = "${FREEBSD_IMAGE_SHA512}" ] || die "SHA512 mismatch for ${IMAGE_XZ}: ${actual}"
+		printf '%s: OK\n' "${IMAGE_XZ}"
+	else
+		die "Missing SHA512 verifier: sha512sum or sha512"
+	fi
 }
 
 create_overlay() {
@@ -567,8 +575,9 @@ publish_sourcehut_pages() {
 	fi
 
 	write_release_notes
-	local archive
-	archive="$(mktemp --suffix=.tar.gz)"
+	local tmpdir archive
+	tmpdir="$(mktemp -d)"
+	archive="${tmpdir}/repo.tar.gz"
 	(
 		cd "${output_dir}"
 		tar -czf "${archive}" .
@@ -578,7 +587,7 @@ publish_sourcehut_pages() {
 		-d "${SOURCEHUT_PAGES_DOMAIN}" \
 		--subdirectory "${SOURCEHUT_PAGES_SUBDIR}" \
 		"${archive}"
-	rm -f "${archive}"
+	rm -rf "${tmpdir}"
 }
 
 publish_release() {

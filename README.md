@@ -38,10 +38,50 @@ git-crypt status -f
 
 ## Local QEMU builder
 
-The repository is built locally in a persistent FreeBSD QEMU VM and the finished
-flat pkg repository can be uploaded to SourceHut Pages. SourceHut is the
-primary source control and package repository hosting target; GitHub is only a
-read-only mirror synced explicitly after the daily cutoff.
+The repository currently supports two builder paths:
+
+- Native FreeBSD host: the preferred path for the dedicated builder machine.
+- Local QEMU FreeBSD guest: the workstation fallback used during bring-up.
+
+The finished flat pkg repository can be uploaded to SourceHut Pages. SourceHut
+is the primary source control and package repository hosting target; GitHub is
+only a read-only mirror synced explicitly after the daily cutoff.
+
+## Native FreeBSD Builder
+
+The dedicated builder target is a FreeBSD/amd64 host with roughly 24 GiB RAM
+and 1-1.5 TiB mixed SATA/NVMe SSD storage. FreeBSD should host poudriere
+directly. Linux becomes a guest on that machine for Linux-centric work; it is
+not in the critical path for foji-bsd package builds.
+
+Bootstrap host packages:
+
+```sh
+sudo sh scripts/bootstrap-freebsd-builder.sh
+```
+
+Validate host readiness:
+
+```sh
+FOJI_BUILDER_MODE=native-freebsd FOJI_BUILDER_ARCH=amd64 scripts/check-builder-host.sh
+```
+
+Run the default full amd64 profile directly on the FreeBSD host:
+
+```sh
+export PKG_REPO_SIGNING_KEY_B64="$(base64 < pkg.key | tr -d '\n')"
+POUDRIERE_BASE=/usr/local/poudriere \
+PUBLISH=yes \
+scripts/native-freebsd-build.sh all
+```
+
+Storage layout is intentionally not hardcoded yet. Put `POUDRIERE_BASE` on the
+largest reliable build dataset, preferably on the faster SSD tier if there is
+room for poudriere jails, packages, distfiles, and work directories. Keep the
+exact ZFS pool/dataset names as builder-machine IaC once the final disks are
+known.
+
+## Local QEMU Builder
 
 Default aarch64 build:
 
