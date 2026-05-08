@@ -2,7 +2,7 @@
 
 ## Shortcuts to revisit
 
-- Local QEMU builds use official FreeBSD `BASIC-CLOUDINIT-zfs` images and persistent qcow2 overlays under `FOJI_FORGE_DIR`. This removes GitHub runner/cache coupling, but the dedicated build machine should eventually pin image checksums and document the refresh process.
+- Local QEMU builds use official FreeBSD `BASIC-CLOUDINIT-zfs` images and persistent qcow2 overlays under `FOJI_FORGE_DIR`. Default image downloads are now pinned by SHA512, but the dedicated build machine should still document the checksum refresh process for future FreeBSD releases.
 - The local builder host currently depends on distro package names such as `qemu-full`, `edk2-ovmf`, `edk2-aarch64`, `cdrtools`, `openssh`, `openbsd-netcat`, `rsync`, `hut`, `curl`, and `xz`. Convert these observed package requirements into IaC once the dedicated build machine target distribution is fixed.
 - The dedicated builder should avoid running VirtualBox guests while QEMU/KVM package builds are active. On altair, active VirtualBox guests caused `KVM_CREATE_VM` to fail until they were shut down.
 - `PKG_REPO_SIGNING_KEY_B64` is currently required for local non-publishing builds because repository signing happens before the optional GitHub release upload. Decide whether this remains desirable or whether unsigned local smoke builds should be supported explicitly.

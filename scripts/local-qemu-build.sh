@@ -33,6 +33,7 @@ case "${FOJI_BUILDER_ARCH}" in
 		FOJI_VM_MEM="${FOJI_VM_MEM:-8192}"
 		PACKAGE_FETCH_BRANCH="${PACKAGE_FETCH_BRANCH:-quarterly}"
 		FREEBSD_IMAGE_URL="${FREEBSD_IMAGE_URL:-https://download.freebsd.org/releases/VM-IMAGES/${FREEBSD_RELEASE}/amd64/Latest/FreeBSD-${FREEBSD_RELEASE}-amd64-BASIC-CLOUDINIT-zfs.raw.xz}"
+		FREEBSD_IMAGE_SHA512="${FREEBSD_IMAGE_SHA512:-35f01d06cdb0d447455001faf6c658b34999d2b9fad73a07c66b99fcdb4b032c18b49109f1082cb5bec049295941dfe32a7295dec6fb37d8a51562a7fa06baf4}"
 		PKG_ABI="${PKG_ABI:-FreeBSD:${FREEBSD_MAJOR}:amd64}"
 		POUDRIERE_ARCH="${POUDRIERE_ARCH:-amd64}"
 		TARGET_ARCH="${TARGET_ARCH:-amd64}"
@@ -43,6 +44,7 @@ case "${FOJI_BUILDER_ARCH}" in
 		FOJI_VM_MEM="${FOJI_VM_MEM:-4096}"
 		PACKAGE_FETCH_BRANCH="${PACKAGE_FETCH_BRANCH:-quarterly}"
 		FREEBSD_IMAGE_URL="${FREEBSD_IMAGE_URL:-https://download.freebsd.org/releases/VM-IMAGES/${FREEBSD_RELEASE}/aarch64/Latest/FreeBSD-${FREEBSD_RELEASE}-arm64-aarch64-BASIC-CLOUDINIT-zfs.raw.xz}"
+		FREEBSD_IMAGE_SHA512="${FREEBSD_IMAGE_SHA512:-cf99580c2c86e9df165ab2981e7d46993e212bceb367f47b4ac2c7a5543c00663052c21b2b4d776ffcf096d5591293f196853069229f613877755473c1616ca2}"
 		PKG_ABI="${PKG_ABI:-FreeBSD:${FREEBSD_MAJOR}:aarch64}"
 		POUDRIERE_ARCH="${POUDRIERE_ARCH:-arm64.aarch64}"
 		TARGET_ARCH="${TARGET_ARCH:-aarch64}"
@@ -205,11 +207,23 @@ download_image() {
 		curl -fL --retry 3 --retry-delay 5 -o "${IMAGE_XZ}.tmp" "${FREEBSD_IMAGE_URL}"
 		mv "${IMAGE_XZ}.tmp" "${IMAGE_XZ}"
 	fi
+	verify_image_checksum
 
 	if [ ! -f "${BASE_IMAGE}" ]; then
 		log "Decompressing ${IMAGE_XZ}"
 		xz -dk "${IMAGE_XZ}"
 	fi
+}
+
+verify_image_checksum() {
+	if [ "${FREEBSD_IMAGE_SHA512:-}" = skip ]; then
+		log "Skipping SHA512 verification for ${IMAGE_XZ}"
+		return 0
+	fi
+	[ -n "${FREEBSD_IMAGE_SHA512:-}" ] || die "FREEBSD_IMAGE_SHA512 is required for ${FREEBSD_IMAGE_URL}; set it to the expected SHA512 or to 'skip'"
+	require_cmd sha512sum
+	log "Verifying SHA512 for ${IMAGE_XZ}"
+	printf '%s  %s\n' "${FREEBSD_IMAGE_SHA512}" "${IMAGE_XZ}" | sha512sum -c -
 }
 
 create_overlay() {
@@ -603,6 +617,7 @@ Important environment:
   FOJI_BUILDER_ARCH=${FOJI_BUILDER_ARCH}
   FOJI_BUILD_PROFILE=${FOJI_BUILD_PROFILE}
   FOJI_VM_DISK_SIZE=${FOJI_VM_DISK_SIZE}
+  FREEBSD_IMAGE_SHA512=${FREEBSD_IMAGE_SHA512}
   REQUESTED_PORTS=${REQUESTED_PORTS}
   REPO_PACKAGE_ORIGINS=${REPO_PACKAGE_ORIGINS}
   RELEASE_TARGET=${RELEASE_TARGET}

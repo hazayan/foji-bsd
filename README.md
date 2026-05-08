@@ -61,6 +61,7 @@ FOJI_SSH_PUBLIC_KEY=~/.ssh/vms.pub
 FOJI_SSH_PRIVATE_KEY=~/.ssh/vms
 FOJI_SSH_PORT=2222
 FOJI_VM_DISK_SIZE=64G
+FREEBSD_IMAGE_SHA512=<expected image checksum>
 REQUESTED_PORTS=auto
 RELEASE_TARGET=sourcehut-pages
 SOURCEHUT_PAGES_DOMAIN=ylabidi.srht.site
@@ -92,6 +93,12 @@ The script expects:
   guest SSH to become reachable.
 - An SSH keypair for the builder user; by default `~/.ssh/vms` and
   `~/.ssh/vms.pub`.
+
+The default FreeBSD 15.0 amd64 and aarch64 `BASIC-CLOUDINIT-zfs.raw.xz` images
+are pinned by SHA512 before they are decompressed or used as qcow2 backing
+images. When overriding `FREEBSD_IMAGE_URL`, also set `FREEBSD_IMAGE_SHA512` to
+the expected digest. Use `FREEBSD_IMAGE_SHA512=skip` only for an explicitly
+trusted local test image.
 
 FreeBSD cloud images do not include `rsync`; the host script bootstraps `pkg`
 and installs `rsync` in the guest before the first repository sync. The full
