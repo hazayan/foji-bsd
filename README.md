@@ -4,6 +4,38 @@ Custom FreeBSD ports tree and local package repository builder.
 
 Porting conventions for custom ports live in [PORTING.md](PORTING.md).
 
+## Encrypted Beads Export
+
+The Beads working export stays plaintext at `.beads/issues.jsonl` so `bd` can
+read and update it normally. Git stores that file through `git-crypt`, so the
+blob published to GitHub is encrypted while the local checkout remains usable
+after `git-crypt unlock`.
+
+This repository grants unlock access to GPG key `83D121B5F6A8A730`.
+
+Fresh clones need:
+
+```sh
+git-crypt unlock
+bd bootstrap
+```
+
+The Beads-managed pre-commit hook exports current issue state before each
+commit. The local hook should then run:
+
+```sh
+scripts/check-beads-git-crypt.sh
+```
+
+That check verifies `.beads/issues.jsonl` is plaintext in the working tree,
+has no unstaged post-export drift, is covered by the `git-crypt` filter, and is
+staged as an encrypted `GITCRYPT` blob. If the file was already tracked before
+the encryption attribute was added, refresh the index once with:
+
+```sh
+git-crypt status -f
+```
+
 ## Local QEMU builder
 
 The repository is built locally in a persistent FreeBSD QEMU VM and the finished
