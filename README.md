@@ -8,7 +8,7 @@ Porting conventions for custom ports live in [PORTING.md](PORTING.md).
 
 The Beads working export stays plaintext at `.beads/issues.jsonl` so `bd` can
 read and update it normally. Git stores that file through `git-crypt`, so the
-blob published to GitHub is encrypted while the local checkout remains usable
+blob published to SourceHut is encrypted while the local checkout remains usable
 after `git-crypt unlock`.
 
 This repository grants unlock access to GPG key `83D121B5F6A8A730`.
@@ -39,9 +39,9 @@ git-crypt status -f
 ## Local QEMU builder
 
 The repository is built locally in a persistent FreeBSD QEMU VM and the finished
-flat pkg repository can be uploaded to GitHub Releases. GitHub is only source
-control and release hosting; poudriere state lives under a configurable forge
-directory outside this repository.
+flat pkg repository can be uploaded to SourceHut Pages. SourceHut is the
+primary source control and package repository hosting target; GitHub is only a
+read-only mirror synced explicitly after the daily cutoff.
 
 Default aarch64 build:
 
@@ -62,13 +62,15 @@ FOJI_SSH_PRIVATE_KEY=~/.ssh/vms
 FOJI_SSH_PORT=2222
 FOJI_VM_DISK_SIZE=64G
 REQUESTED_PORTS=auto
+RELEASE_TARGET=sourcehut-pages
+SOURCEHUT_PAGES_DOMAIN=ylabidi.srht.site
 PUBLISH=no
 ```
 
 Host packages observed on the current Artix/CachyOS-style builder:
 
 ```sh
-pacman -S qemu-full edk2-ovmf edk2-aarch64 cdrtools openssh openbsd-netcat rsync github-cli curl xz
+pacman -S qemu-full edk2-ovmf edk2-aarch64 cdrtools openssh openbsd-netcat rsync hut curl xz
 ```
 
 The aarch64 VM specifically needs `edk2-aarch64`. The similarly named
@@ -128,19 +130,26 @@ creation, and fetch back to the host. That first-run path created the poudriere
 jail from binary release sets and applied `freebsd-update`; it did not compile
 FreeBSD base.
 
-For GitHub release publication, prefer filtering the exported repository to
-custom runtime packages:
+SourceHut Pages can publish the flat repository as-is because it preserves a
+normal directory layout and filenames. The default publication target is:
 
 ```sh
-FOJI_BUILD_PROFILE=kunci
+RELEASE_TARGET=sourcehut-pages
+SOURCEHUT_PAGES_DOMAIN=ylabidi.srht.site
+SOURCEHUT_PAGES_SUBDIR=/foji-bsd/repo-FreeBSD-15-aarch64
 ```
 
-The complete poudriere output is useful for diagnostics, but upstream package
-filenames may contain commas for epochs. GitHub release assets normalize those
-commas, which breaks pkg repository metadata for those upstream packages. The
-custom `sysutils/kunci` package has only FreeBSD base shared-library runtime
-requirements, so it can be published by itself while consumers keep the normal
-FreeBSD repositories enabled.
+GitHub release publication remains available as an explicit compatibility path:
+
+```sh
+RELEASE_TARGET=github
+```
+
+For GitHub release publication, prefer filtering the exported repository to
+custom runtime packages, for example `FOJI_BUILD_PROFILE=kunci`. The complete
+poudriere output is useful for diagnostics, but upstream package filenames may
+contain commas for epochs. GitHub release assets normalize those commas, which
+breaks pkg repository metadata for those upstream packages.
 
 The `kunci` profile expands to:
 
@@ -221,25 +230,56 @@ The script downloads the official FreeBSD `BASIC-CLOUDINIT-zfs` image for the
 selected architecture, creates a persistent qcow2 overlay with a relative
 backing path, creates a NoCloud seed ISO, starts QEMU with host port forwarding,
 syncs this ports tree into the VM with rsync, runs poudriere there, copies
-`repo-output` back, and optionally uploads release assets with `gh`.
+`repo-output` back, and optionally publishes the repository with `hut`.
 
 `PKG_REPO_SIGNING_KEY_B64` is required even when `PUBLISH=no`, because the flat
-repository is signed before upload is considered. `gh` is only required when
-publishing release assets from the builder host.
+repository is signed before upload is considered. `hut` is required when
+publishing to SourceHut Pages. `gh` is only required when explicitly publishing
+to GitHub releases with `RELEASE_TARGET=github`.
 
 Use `scripts/local-qemu-build.sh reset` to stop the VM and remove generated
 builder state for the selected architecture. The reset preserves downloaded
 FreeBSD images but deletes the qcow2 overlay, cloud-init seed, SSH known-hosts
 file, serial log, and UEFI variable store so the next run boots a fresh guest.
 
-The release URL remains directly usable as a pkg repository URL:
+The SourceHut Pages URL remains directly usable as a pkg repository URL:
 
 ```conf
 foji: {
-  url: "https://github.com/hazayan/foji-bsd/releases/download/repo-FreeBSD-15-aarch64",
+  url: "https://ylabidi.srht.site/foji-bsd/repo-FreeBSD-15-aarch64",
   mirror_type: "none",
   signature_type: "pubkey",
   pubkey: "/usr/local/etc/pkg/keys/foji.pub",
   enabled: yes
 }
 ```
+
+## Source Control
+
+The primary remote is SourceHut:
+
+```sh
+git remote set-url zung git@git.sr.ht:~ylabidi/foji-bsd
+git config remote.pushDefault zung
+git config branch.main.remote zung
+git config branch.main.merge refs/heads/main
+```
+
+The local `origin` push URL should remain blocked to prevent accidental GitHub
+pushes:
+
+```sh
+git config remote.origin.pushurl DISABLED-GITHUB-MIRROR-USE-SCRIPT
+```
+
+GitHub mirror sync is explicit and time-gated:
+
+```sh
+scripts/mirror-github.sh
+```
+
+The mirror script refuses to run before 19:00 local time unless
+`GITHUB_MIRROR_FORCE_TIME=yes` is set. It keeps GitHub an exact mirror of
+SourceHut history. It does not rewrite commit timestamps because that would
+create different object IDs and make the mirror diverge from the primary
+repository.

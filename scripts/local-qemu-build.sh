@@ -23,6 +23,8 @@ POUDRIERE_BULK_FLAGS="${POUDRIERE_BULK_FLAGS:--v}"
 PORTS_REF="${PORTS_REF:-}"
 SIGNING_TYPE="${SIGNING_TYPE:-ecdsa}"
 GITHUB_REPOSITORY="${GITHUB_REPOSITORY:-hazayan/foji-bsd}"
+RELEASE_TARGET="${RELEASE_TARGET:-sourcehut-pages}"
+SOURCEHUT_PAGES_DOMAIN="${SOURCEHUT_PAGES_DOMAIN:-ylabidi.srht.site}"
 PUBLISH="${PUBLISH:-no}"
 
 case "${FOJI_BUILDER_ARCH}" in
@@ -113,6 +115,7 @@ SET_NAME="${SET_NAME:-default}"
 POUDRIERE_JAIL_FLAGS="${POUDRIERE_JAIL_FLAGS:--X}"
 RELEASE_TAG="${RELEASE_TAG:-repo-${PKG_ABI//:/-}}"
 REPO_OUT="${REPO_OUT:-repo-output/${PKG_ABI}}"
+SOURCEHUT_PAGES_SUBDIR="${SOURCEHUT_PAGES_SUBDIR:-/foji-bsd/${RELEASE_TAG}}"
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
@@ -458,6 +461,8 @@ fetch_repo() {
 }
 
 write_release_notes() {
+	local repo_url
+	repo_url="$(package_repo_url)"
 	cat > "${REPO_ROOT}/release-notes.md" <<EOF
 Last updated: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
 
@@ -469,7 +474,7 @@ Install the foji public key on the target system through sysbsd, then add:
 
 \`\`\`conf
 foji: {
-  url: "https://github.com/${GITHUB_REPOSITORY}/releases/download/${RELEASE_TAG}",
+  url: "${repo_url}",
   mirror_type: "none",
   signature_type: "pubkey",
   pubkey: "/usr/local/etc/pkg/keys/foji.pub",
@@ -479,13 +484,26 @@ foji: {
 EOF
 }
 
-publish_release() {
+package_repo_url() {
+	case "${RELEASE_TARGET}" in
+		sourcehut-pages)
+			printf 'https://%s%s' "${SOURCEHUT_PAGES_DOMAIN}" "${SOURCEHUT_PAGES_SUBDIR}"
+			;;
+		github)
+			printf 'https://github.com/%s/releases/download/%s' "${GITHUB_REPOSITORY}" "${RELEASE_TAG}"
+			;;
+		*)
+			die "Unsupported RELEASE_TARGET: ${RELEASE_TARGET}"
+			;;
+	esac
+}
+
+publish_github_release() {
 	require_cmd gh
 	local output_dir="${REPO_ROOT}/${REPO_OUT}"
 	[ -d "${output_dir}" ] || die "Repository output directory does not exist: ${output_dir}"
 	mapfile -t uploads < <(find "${output_dir}" -maxdepth 1 -type f -print | sort)
 	[ "${#uploads[@]}" -gt 0 ] || die "No repository files to upload from ${output_dir}"
-
 	write_release_notes
 	log "Publishing ${RELEASE_TAG} to ${GITHUB_REPOSITORY}"
 	if gh release view "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
@@ -515,6 +533,44 @@ publish_release() {
 	rm -f "${current_assets}"
 }
 
+publish_sourcehut_pages() {
+	require_cmd hut
+	require_cmd tar
+	local output_dir="${REPO_ROOT}/${REPO_OUT}"
+	[ -d "${output_dir}" ] || die "Repository output directory does not exist: ${output_dir}"
+	if ! find "${output_dir}" -maxdepth 1 -type f -print -quit | grep -q .; then
+		die "No repository files to publish from ${output_dir}"
+	fi
+
+	write_release_notes
+	local archive
+	archive="$(mktemp --suffix=.tar.gz)"
+	(
+		cd "${output_dir}"
+		tar -czf "${archive}" .
+	)
+	log "Publishing ${RELEASE_TAG} to SourceHut Pages at https://${SOURCEHUT_PAGES_DOMAIN}${SOURCEHUT_PAGES_SUBDIR}"
+	hut pages publish \
+		-d "${SOURCEHUT_PAGES_DOMAIN}" \
+		--subdirectory "${SOURCEHUT_PAGES_SUBDIR}" \
+		"${archive}"
+	rm -f "${archive}"
+}
+
+publish_release() {
+	case "${RELEASE_TARGET}" in
+		sourcehut-pages)
+			publish_sourcehut_pages
+			;;
+		github)
+			publish_github_release
+			;;
+		*)
+			die "Unsupported RELEASE_TARGET: ${RELEASE_TARGET}"
+			;;
+	esac
+}
+
 all() {
 	start_vm
 	build_repo
@@ -538,7 +594,7 @@ Commands:
   sync      Rsync the ports tree into the VM
   build     Run poudriere build in the VM
   fetch     Fetch repo-output from the VM
-  publish   Upload the fetched repository to the GitHub release
+  publish   Upload the fetched repository to RELEASE_TARGET
   all       start, build, fetch, and optionally publish when PUBLISH=yes
   stop      Shut down the VM
 
@@ -549,6 +605,9 @@ Important environment:
   FOJI_VM_DISK_SIZE=${FOJI_VM_DISK_SIZE}
   REQUESTED_PORTS=${REQUESTED_PORTS}
   REPO_PACKAGE_ORIGINS=${REPO_PACKAGE_ORIGINS}
+  RELEASE_TARGET=${RELEASE_TARGET}
+  SOURCEHUT_PAGES_DOMAIN=${SOURCEHUT_PAGES_DOMAIN}
+  SOURCEHUT_PAGES_SUBDIR=${SOURCEHUT_PAGES_SUBDIR}
   PUBLISH=${PUBLISH}
 EOF
 }
