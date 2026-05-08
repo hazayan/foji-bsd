@@ -144,6 +144,15 @@ version, ABI, runtime and library dependencies, options, and blacklist policy.
 Use `POUDRIERE_BULK_FLAGS="-vv"` when diagnosing fetch decisions; avoid
 overriding this unless `pkg` build time becomes material.
 
+Check how far the temporary 2026Q2 `PORTS_REF` pins are from the live branch:
+
+```sh
+scripts/show-ports-ref-pins.sh
+```
+
+Refreshing those pins should be paired with a targeted build that proves large
+binary dependencies are still fetched rather than rebuilt.
+
 An amd64 relocation smoke run on `altair` with `FOJI_FORGE_DIR=/data/workspace/forge`,
 `FOJI_BUILD_PROFILE=kunci`, and `PUBLISH=no` completed the full local cycle:
 KVM boot, rsync into the guest, poudriere build, signed flat repository
