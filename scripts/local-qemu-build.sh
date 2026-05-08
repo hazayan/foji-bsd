@@ -107,6 +107,9 @@ case "${FOJI_BUILD_PROFILE}" in
 		REQUESTED_PORTS="manticore"
 		REPO_PACKAGE_ORIGINS="databases/manticore"
 		;;
+	changed)
+		REQUESTED_PORTS="changed"
+		;;
 	*)
 		printf 'Unsupported FOJI_BUILD_PROFILE: %s\n' "${FOJI_BUILD_PROFILE}" >&2
 		exit 1
@@ -121,6 +124,7 @@ SOURCEHUT_PAGES_SUBDIR="${SOURCEHUT_PAGES_SUBDIR:-/foji-bsd/${RELEASE_TAG}}"
 
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
+
 ARCH_DIR="${FOJI_FORGE_DIR}/bsd/${FOJI_BUILDER_ARCH}"
 STATE_DIR="${ARCH_DIR}/builder"
 IMAGE_XZ="${ARCH_DIR}/$(basename "${FREEBSD_IMAGE_URL}")"
@@ -141,6 +145,12 @@ die() {
 	printf 'Error: %s\n' "$*" >&2
 	exit 1
 }
+
+if [ "${REQUESTED_PORTS}" = changed ]; then
+	REQUESTED_PORTS="$("${SCRIPT_DIR}/list-changed-ports.sh")"
+	[ -n "${REQUESTED_PORTS}" ] || die "No changed custom ports found. Set CHANGED_SINCE or REQUESTED_PORTS explicitly."
+	REPO_PACKAGE_ORIGINS="${REPO_PACKAGE_ORIGINS:-${REQUESTED_PORTS}}"
+fi
 
 require_cmd() {
 	command -v "$1" >/dev/null 2>&1 || die "Missing required command: $1"

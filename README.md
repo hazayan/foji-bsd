@@ -221,6 +221,18 @@ REPO_PACKAGE_ORIGINS="databases/manticore"
 `databases/manticore` is amd64-only and intentionally excluded from the
 aarch64 build path.
 
+For local iteration on ports changed since the primary SourceHut branch, use:
+
+```sh
+FOJI_BUILD_PROFILE=changed
+```
+
+That profile uses `scripts/list-changed-ports.sh` to inspect changes since
+`CHANGED_SINCE`, defaulting to `zung/main`, plus staged and unstaged working
+tree changes. It sets both `REQUESTED_PORTS` and `REPO_PACKAGE_ORIGINS` to the
+detected custom port origins. Use explicit profiles such as `foji-amd64` for
+final publication when the release must preserve the full package set.
+
 On altair-class builder hardware, override the conservative amd64 VM size:
 
 ```sh
@@ -267,6 +279,11 @@ foji: {
   enabled: yes
 }
 ```
+
+The repository public key is intentionally not sourced from the package
+repository itself. Distribute `foji.pub` through sysbsd or another trusted node
+bootstrap path before enabling the repository. The package repository URL is a
+distribution endpoint, not the root of trust.
 
 ## Source Control
 
