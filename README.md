@@ -137,6 +137,13 @@ aarch64 validation run for `REQUESTED_PORTS=kunci` built `ports-mgmt/pkg` and
 `sysutils/kunci`, fetched the rest of the dependency closure, and produced a
 239 MiB flat repository under `repo-output/FreeBSD:15:aarch64`.
 
+Poudriere may still build `ports-mgmt/pkg` even when `-b quarterly` is active.
+That is expected when the binary package cannot be accepted under poudriere's
+package-fetch rules. It only uses fetched packages that match the local
+version, ABI, runtime and library dependencies, options, and blacklist policy.
+Use `POUDRIERE_BULK_FLAGS="-vv"` when diagnosing fetch decisions; avoid
+overriding this unless `pkg` build time becomes material.
+
 An amd64 relocation smoke run on `altair` with `FOJI_FORGE_DIR=/data/workspace/forge`,
 `FOJI_BUILD_PROFILE=kunci`, and `PUBLISH=no` completed the full local cycle:
 KVM boot, rsync into the guest, poudriere build, signed flat repository
