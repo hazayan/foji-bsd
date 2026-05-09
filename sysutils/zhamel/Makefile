@@ -9,7 +9,7 @@ MAINTAINER=	yassine@hazayan.dev
 COMMENT=	Rust UEFI loader for FreeBSD with ZFS unlock extensions
 WWW=		https://github.com/hazayan/zhamel
 
-LICENSE=	MIT
+LICENSE=	GPLv3
 LICENSE_FILE=	${WRKSRC}/LICENSE
 
 ONLY_FOR_ARCHS=	amd64

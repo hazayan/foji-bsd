@@ -9,7 +9,7 @@ MAINTAINER=	yassine@hazayan.dev
 COMMENT=	Kernel module that loads zhamel-preloaded ZFS wrapping keys
 WWW=		https://github.com/hazayan/zhamel-zfskey-kmod
 
-LICENSE=	BSD2CLAUSE
+LICENSE=	GPLv3
 LICENSE_FILE=	${WRKSRC}/LICENSE
 
 USES=		kmod uidfix

@@ -4,6 +4,12 @@ Custom FreeBSD ports tree and local package repository builder.
 
 Porting conventions for custom ports live in [PORTING.md](PORTING.md).
 
+## License
+
+The foji-bsd repository tooling and documentation are licensed under the GNU
+General Public License v3.0 or later. Individual ported upstream projects keep
+their own licenses as declared in each port Makefile.
+
 ## Encrypted Beads Export
 
 The Beads working export stays plaintext at `.beads/issues.jsonl` so `bd` can

@@ -9,7 +9,7 @@ MAINTAINER=	yassine@hazayan.dev
 COMMENT=	Clevis and Tang implementation for network-bound disk encryption
 WWW=		https://github.com/hazayan/kunci
 
-LICENSE=	BSD2CLAUSE
+LICENSE=	GPLv3
 LICENSE_FILE=	${WRKSRC}/LICENSE
 
 BUILD_DEPENDS=	${LOCALBASE}/llvm20/lib/libclang.so:devel/llvm20
