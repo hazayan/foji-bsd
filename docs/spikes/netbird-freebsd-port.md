@@ -147,18 +147,26 @@ second-stage target after client and core server components.
 
 ## Server Packaging Shape
 
-For a FreeBSD self-hosted stack, the least risky package split is:
+For a FreeBSD self-hosted stack, the preferred package split is:
 
 - `security/netbird`: existing client daemon and CLI.
-- `security/netbird-signal`: Signal server, pure Go.
-- `security/netbird-relay`: Relay server plus optional STUN listener, pure Go.
-- `security/netbird-upload`: debug upload server, pure Go, optional.
-- `security/netbird-mgmt`: management server, cgo-enabled, native FreeBSD
-  build required.
 - `security/netbird-server`: combined self-hosted server, cgo-enabled, native
-  FreeBSD build required.
-- `security/netbird-proxy`: defer until proxy's embedded client dependency
-  behavior is validated natively.
+  FreeBSD build required. This is the focus for foji-bsd because it packages
+  management, signal, relay, and optional STUN behind one daemon and one YAML
+  configuration.
+
+Do not patch or replace `security/netbird` unless the existing client port
+becomes a concrete blocker. If we later need to patch both client and server
+from a fork, do not collide with the official client port. Add
+`security/netbird-suite` as a separate suite/meta port instead. The suite port
+can start as a meta-port depending on `security/netbird` and
+`security/netbird-server`; it should only become a full fork-backed replacement
+if we need to own both sides.
+
+Separate `security/netbird-signal`, `security/netbird-relay`,
+`security/netbird-upload`, `security/netbird-mgmt`, or `security/netbird-proxy`
+ports remain fallback options if the combined server proves too coupled or too
+large for our usage. They are not the first target.
 
 The combined server is attractive operationally because it multiplexes
 management, signal, relay, and optional STUN around one YAML configuration.
@@ -176,17 +184,17 @@ Linux defaults such as `/var/lib/netbird`:
 
 ## Recommendation
 
-Do not fork upstream for the client, signal, relay, or upload-server first
-milestones.
+Do not fork upstream for the first `security/netbird-server` milestone.
 
 For foji-bsd, proceed incrementally:
 
-1. Import the official FreeBSD client port with minimal local changes.
-2. Add separate pure-Go ports for `netbird-signal` and `netbird-relay`.
-3. Validate `netbird-mgmt` and `netbird-server` inside the FreeBSD builder with
-   cgo enabled before creating permanent ports for them.
-4. Defer `netbird-proxy` until the embedded client dependency path is proven
-   natively.
+1. Leave the official `security/netbird` client port alone.
+2. Add `security/netbird-server` for the combined server.
+3. Validate `netbird-server` inside the FreeBSD builder with cgo enabled.
+4. Only introduce `security/netbird-suite` if we need to patch/own the client
+   and server together.
+5. Defer standalone signal, relay, management, upload, and proxy ports unless
+   the combined server path fails or becomes operationally awkward.
 
 A fork is only justified if one of these becomes true:
 
@@ -204,34 +212,19 @@ release tags.
 
 ## Proposed First Milestone
 
-Add `security/netbird` to foji-bsd from the official FreeBSD port, then run:
+Add `security/netbird-server` to foji-bsd for the combined server, then run:
 
 ```sh
 FOJI_BUILDER_ARCH=amd64 \
-REQUESTED_PORTS=security/netbird \
-REPO_PACKAGE_ORIGINS=security/netbird \
+REQUESTED_PORTS=security/netbird-server \
+REPO_PACKAGE_ORIGINS=security/netbird-server \
 PUBLISH=no \
 scripts/native-freebsd-build.sh build
 ```
 
-If that succeeds, add a profile for sysbsd nodes that should receive NetBird.
-If it fails, inspect the poudriere log before deciding between a local port
-patch and an upstream fork.
-
-Then create small first-pass ports for the pure-Go server components:
-
-```text
-security/netbird-signal  -> ./signal:netbird-signal
-security/netbird-relay   -> ./relay:netbird-relay
-security/netbird-upload  -> ./upload-server:netbird-upload
-```
-
-After those build, attempt native poudriere builds for:
-
-```text
-security/netbird-mgmt    -> ./management:netbird-mgmt, cgo enabled
-security/netbird-server  -> ./combined:netbird-server, cgo enabled
-```
+If that succeeds, add it to the appropriate amd64 build profile. If it fails,
+inspect the poudriere log before deciding between a local port patch and an
+upstream fork.
 
 Treat `security/netbird-proxy` as a follow-up spike unless a native FreeBSD
 build succeeds without source changes.

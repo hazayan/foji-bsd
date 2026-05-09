@@ -1,0 +1,8 @@
+NetBird is an open-source WireGuard-based overlay network with Zero Trust
+Network Access features.
+
+This port provides the combined self-hosted NetBird server. The combined server
+runs management, signal, relay, and optional STUN services from one daemon and
+one YAML configuration file.
+
+WWW: https://github.com/netbirdio/netbird

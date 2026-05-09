@@ -1,0 +1,28 @@
+server:
+  listenAddress: ":8443"
+  metricsPort: 9090
+  healthcheckAddress: ":9000"
+  logLevel: "info"
+  logFile: "/var/log/netbird/server.log"
+  exposedAddress: "https://example.net:8443"
+  stunPorts: []
+  authSecret: "replace-with-a-long-random-secret"
+  dataDir: "/var/db/netbird-server"
+  disableAnonymousMetrics: true
+  disableGeoliteUpdate: true
+  tls:
+    certFile: "%%PREFIX%%/etc/netbird/server.crt"
+    keyFile: "%%PREFIX%%/etc/netbird/server.key"
+  auth:
+    issuer: "https://example.net:8443/oauth2"
+    localAuthDisabled: false
+    storage:
+      type: "sqlite3"
+      file: "/var/db/netbird-server/idp.db"
+  store:
+    engine: "sqlite"
+    file: "/var/db/netbird-server/store.db"
+    encryptionKey: "replace-with-a-persistent-encryption-key"
+  activityStore:
+    engine: "sqlite"
+    file: "/var/db/netbird-server/activity.db"

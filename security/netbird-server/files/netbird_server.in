@@ -1,0 +1,40 @@
+#!/bin/sh
+
+# PROVIDE: netbird_server
+# REQUIRE: NETWORKING
+# KEYWORD: shutdown
+#
+# Add the following lines to /etc/rc.conf to enable netbird-server:
+#
+# netbird_server_enable (bool):	Set to YES to run netbird-server.
+#				Default: NO
+# netbird_server_config (path):	Path to the YAML configuration file.
+#				Default: %%PREFIX%%/etc/netbird/netbird-server.yml
+# netbird_server_logfile (path):	Path to daemon stdout/stderr log file.
+#				Default: /var/log/netbird/server-daemon.log
+#
+
+. /etc/rc.subr
+
+name="netbird_server"
+rcvar="netbird_server_enable"
+
+load_rc_config "${name}"
+
+: ${netbird_server_enable:="NO"}
+: ${netbird_server_config:="%%PREFIX%%/etc/netbird/netbird-server.yml"}
+: ${netbird_server_logfile:="/var/log/netbird/server-daemon.log"}
+
+pidfile="/var/run/${name}.pid"
+command="/usr/sbin/daemon"
+command_args="-P ${pidfile} -r -t netbird-server -o ${netbird_server_logfile} %%PREFIX%%/bin/netbird-server --config ${netbird_server_config}"
+required_files="${netbird_server_config}"
+start_precmd="netbird_server_precmd"
+
+netbird_server_precmd()
+{
+	install -d -m 0750 /var/db/netbird-server
+	install -d -m 0755 /var/log/netbird
+}
+
+run_rc_command "$1"

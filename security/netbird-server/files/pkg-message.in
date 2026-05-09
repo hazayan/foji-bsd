@@ -1,0 +1,20 @@
+[
+{ type: install
+  message: <<EOM
+Before enabling netbird-server:
+
+1. Copy %%PREFIX%%/etc/netbird/netbird-server.yml.sample to
+   %%PREFIX%%/etc/netbird/netbird-server.yml.
+2. Set server.exposedAddress, server.authSecret, TLS paths, and persistent
+   store encryption keys.
+3. Enable the service:
+
+   sysrc netbird_server_enable=YES
+   service netbird_server start
+
+The sample configuration listens on :8443 and disables local STUN by default
+to avoid privileged UDP ports during first validation. Adjust it for the final
+deployment topology.
+EOM
+}
+]
