@@ -227,6 +227,11 @@ SOURCEHUT_PAGES_DOMAIN=ylabidi.srht.site
 SOURCEHUT_PAGES_SUBDIR=/foji-bsd/repo-FreeBSD-15-aarch64
 ```
 
+The publisher also writes an `index.html` into the repository directory so the
+same URL is inspectable in a browser. SourceHut Pages does not provide directory
+listings, so publishing without an index makes package files accessible but the
+directory URL itself returns an error page.
+
 GitHub release publication remains available as an explicit compatibility path:
 
 ```sh

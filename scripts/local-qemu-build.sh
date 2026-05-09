@@ -516,6 +516,53 @@ foji: {
 EOF
 }
 
+write_repo_index() {
+	local output_dir="$1"
+	local repo_url
+	repo_url="$(package_repo_url)"
+
+	cat > "${output_dir}/index.html" <<EOF
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>foji-bsd ${PKG_ABI}</title>
+</head>
+<body>
+  <h1>foji-bsd ${PKG_ABI}</h1>
+  <p>This directory is a FreeBSD pkg repository.</p>
+  <pre>foji: {
+  url: "${repo_url}",
+  mirror_type: "none",
+  signature_type: "pubkey",
+  pubkey: "/usr/local/etc/pkg/keys/foji.pub",
+  enabled: yes
+}</pre>
+  <h2>Repository files</h2>
+  <ul>
+EOF
+
+	(
+		cd "${output_dir}"
+		for file in *; do
+			[ -f "${file}" ] || continue
+			[ "${file}" != index.html ] || continue
+			printf '%s\n' "${file}"
+		done
+	) |
+		sort |
+		while IFS= read -r file; do
+			printf '    <li><a href="%s">%s</a></li>\n' "${file}" "${file}" >> "${output_dir}/index.html"
+		done
+
+	cat >> "${output_dir}/index.html" <<EOF
+  </ul>
+</body>
+</html>
+EOF
+}
+
 package_repo_url() {
 	case "${RELEASE_TARGET}" in
 		sourcehut-pages)
@@ -575,6 +622,7 @@ publish_sourcehut_pages() {
 	fi
 
 	write_release_notes
+	write_repo_index "${output_dir}"
 	local tmpdir archive
 	tmpdir="$(mktemp -d)"
 	archive="${tmpdir}/repo.tar.gz"
