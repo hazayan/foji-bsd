@@ -51,7 +51,7 @@ The repository currently supports two builder paths:
 
 The finished flat pkg repository can be uploaded to SourceHut Pages. SourceHut
 is the primary source control and package repository hosting target; GitHub is
-only a read-only mirror synced explicitly after the daily cutoff.
+only a read-only mirror synced explicitly on a weekly cadence.
 
 ## Native FreeBSD Builder
 
@@ -391,14 +391,12 @@ pushes:
 git config remote.origin.pushurl DISABLED-GITHUB-MIRROR-USE-SCRIPT
 ```
 
-GitHub mirror sync is explicit and time-gated:
+GitHub mirror sync is explicit and intended to run at most weekly:
 
 ```sh
 scripts/mirror-github.sh
 ```
 
-The mirror script refuses to run before 19:00 local time unless
-`GITHUB_MIRROR_FORCE_TIME=yes` is set. It keeps GitHub an exact mirror of
-SourceHut history. It does not rewrite commit timestamps because that would
-create different object IDs and make the mirror diverge from the primary
-repository.
+The mirror script keeps GitHub an exact mirror of SourceHut history. It does
+not rewrite commit timestamps because that would create different object IDs
+and make the mirror diverge from the primary repository.

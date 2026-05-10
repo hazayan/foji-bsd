@@ -15,5 +15,5 @@
 - Rust-based `amd64` ports now use a rustup-managed build toolchain instead of depending directly on `lang/rust`; `aarch64` cannot use FreeBSD `devel/rustup-init` today because that port is `amd64`-only. Revisit aarch64 Rust build strategy if upstream rustup host support changes.
 - `databases/manticore` is intentionally `amd64`-only for now because it is intended for server nodes and made the first aarch64 builder run impractically long. Revisit if an aarch64 consumer appears.
 - The local builder supports targeted port input through `REQUESTED_PORTS`, `FOJI_BUILD_PROFILE=kunci` sets the known-safe lightweight publication path, and `FOJI_BUILD_PROFILE=changed` selects custom ports changed since `CHANGED_SINCE` for local iteration.
-- GitHub Actions no longer performs FreeBSD package builds. Keep GitHub as a read-only daily mirror only; SourceHut is the primary source control and release target.
+- GitHub Actions no longer performs FreeBSD package builds. Keep GitHub as a read-only weekly mirror only; SourceHut is the primary source control and release target.
 - The repository public key is distributed out of band by sysbsd, not from the SourceHut Pages package repository. Keep this trust flow explicit when adding node bootstrap automation.
