@@ -10,10 +10,10 @@ selected_arches=""
 pin_for_arch() {
 	case "$1" in
 		amd64)
-			printf '%s\n' 7c7fc885b5f45096bd3fdad6ac1c43715111a4ef
+			printf '%s\n' f724b00b1bf27db4605258801fbe8f21a537178a
 			;;
 		aarch64)
-			printf '%s\n' 52322f7d7b98a6556700411ffdccbe2473fd1386
+			printf '%s\n' f724b00b1bf27db4605258801fbe8f21a537178a
 			;;
 		*)
 			printf 'unsupported arch: %s\n' "$1" >&2

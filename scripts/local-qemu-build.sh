@@ -64,14 +64,14 @@ fi
 if [ -z "${PORTS_REF}" ] && [ "${PORTS_BRANCH}" = "2026Q2" ]; then
 	case "${FOJI_BUILDER_ARCH}" in
 		aarch64)
-			# Temporary pin to the 2026Q2 state before ftp/curl moved past
-			# the currently published FreeBSD:15:aarch64 package set.
-			PORTS_REF="52322f7d7b98a6556700411ffdccbe2473fd1386"
+			# Temporary pin to a validated 2026Q2 state where the aarch64
+			# quarterly package set can satisfy kunci's large build deps.
+			PORTS_REF="f724b00b1bf27db4605258801fbe8f21a537178a"
 			;;
 		amd64)
-			# Temporary pin to the 2026Q2 cherry-pick where ftp/curl is
-			# 8.19.0_2, matching the current FreeBSD:15:amd64 packages.
-			PORTS_REF="7c7fc885b5f45096bd3fdad6ac1c43715111a4ef"
+			# Temporary pin to a validated 2026Q2 state where the amd64
+			# quarterly package set can satisfy kunci's large build deps.
+			PORTS_REF="f724b00b1bf27db4605258801fbe8f21a537178a"
 			;;
 	esac
 fi
